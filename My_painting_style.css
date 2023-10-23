@@ -3,13 +3,13 @@
  */
 
 /* Style the Tasks Grid geojson in a similar way to the TM itself, */
-way[taskStatus=VALIDATED]   { fill-color: green;   fill-opacity: 10%; z-index: -1; }
-way[taskStatus=BADIMAGERY]  { fill-color: silver;  fill-opacity: 10%; }
-way[taskStatus=MAPPED]      { fill-color: blue; fill-opacity: 10%; }
-way[taskStatus=READY]       { fill-color: white;   fill-opacity: 10%; }
-way[taskStatus=INVALIDATED] { fill-color: yellow;  fill-opacity: 10%; }
-way[taskStatus=LOCKED_FOR_MAPPING] { fill-color: orange; fill-opacity: 10%; }
-way[taskStatus=LOCKED_FOR_VALIDATION] { fill-color: orange; fill-opacity: 10%; }
+way[taskStatus=VALIDATED]   { fill-color: green;   fill-opacity: 15%; z-index: -1; }
+way[taskStatus=BADIMAGERY]  { fill-color: silver;  fill-opacity: 15%; }
+way[taskStatus=MAPPED]      { fill-color: blue; fill-opacity: 15%; }
+way[taskStatus=READY]       { fill-color: white;   fill-opacity: 15%; }
+way[taskStatus=INVALIDATED] { fill-color: yellow;  fill-opacity: 15%; }
+way[taskStatus=LOCKED_FOR_MAPPING] { fill-color: orange; fill-opacity: 15%; }
+way[taskStatus=LOCKED_FOR_VALIDATION] { fill-color: orange; fill-opacity: 15%; }
 
 /* Annotate on the task IDs when the tasks are large enough on screen. */
 area|z11-[taskStatus && taskId && areasize() > 4000000] { text: "taskId"; }
@@ -61,7 +61,6 @@ node[/^damage:/] < way[highway] {
     dashes: 12,9;
     dashes-background-color: red;
 }
-
 /* Node tagged as damage:  */
 node[/^damage:/]{ 
     icon-image: "https://raw.githubusercontent.com/Patrik-Br/MyPaintStyle/main/icons/damage.png";
@@ -74,7 +73,7 @@ node[/^damage:/]{
 way[highway=tertiary]{
     z-index: 6;
     width: 2;
-    color: #d6d919;
+    color: #b319d9;
 }
 way[highway=unclassified]{
     z-index: 6;
