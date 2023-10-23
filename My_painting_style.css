@@ -1,0 +1,137 @@
+/*
+ * HOT Tasking Manager
+ */
+
+/* Style the Tasks Grid geojson in a similar way to the TM itself, */
+way[taskStatus=VALIDATED]   { fill-color: green;   fill-opacity: 10%; z-index: -1; }
+way[taskStatus=BADIMAGERY]  { fill-color: silver;  fill-opacity: 10%; }
+way[taskStatus=MAPPED]      { fill-color: blue; fill-opacity: 10%; }
+way[taskStatus=READY]       { fill-color: white;   fill-opacity: 10%; }
+way[taskStatus=INVALIDATED] { fill-color: yellow;  fill-opacity: 10%; }
+way[taskStatus=LOCKED_FOR_MAPPING] { fill-color: orange; fill-opacity: 10%; }
+way[taskStatus=LOCKED_FOR_VALIDATION] { fill-color: orange; fill-opacity: 10%; }
+
+/* Annotate on the task IDs when the tasks are large enough on screen. */
+area|z11-[taskStatus && taskId && areasize() > 4000000] { text: "taskId"; }
+area|z13-[taskStatus && taskId && areasize() >  100000] { text: "taskId"; }
+area|z14-[taskStatus && taskId && areasize() >   50000] { text: "taskId"; }
+/* area|z16-[taskStatus && taskId                        ] { text: "taskId"; }*/
+area|z15-[taskStatus][taskId]     { font-size: 12; text-halo-radius: 2; }
+area|z16-[taskStatus][taskId]     { font-size: 18; text-halo-radius: 3; }
+
+/* Taskgrid width for better visibility*/
+*[taskId] {
+    width: 7;
+}
+
+/* Building mapped as node for better visibility*/
+node[building]{
+    text: tag("building");
+    text-color: #fcc;
+    text-halo-color: #000;
+    text-halo-radius: 2;
+    font-size: 15px;
+    font-weight: bold;
+    fill-color: purple;
+}
+
+/* Building tagged as anything else then yes */
+way[building][building!=yes]{
+    text: tag("building");
+    text-color: #fcc;
+    text-halo-color: #000;
+    text-halo-radius: 2;
+    font-size: 15px;
+    font-weight: bold;
+    fill-color: purple;
+}
+
+/* Building tagged as building = yes AND layer = x */
+way[building][building!=roof][layer]{
+    text: This building has layer attribute;
+    text-color: #fcc;
+    text-halo-color: #000;
+    text-halo-radius: 2;
+    font-size: 15px;
+    font-weight: bold;
+    fill-color: purple;
+}
+/* Way with tagged node as damage:  */
+node[/^damage:/] < way[highway] { 
+    dashes: 12,9;
+    dashes-background-color: red;
+}
+
+/* Node tagged as damage:  */
+node[/^damage:/]{ 
+    icon-image: "https://raw.githubusercontent.com/Patrik-Br/MyPaintStyle/main/icons/damage.png";
+    icon-height: 20;
+    icon-offset: 8;
+    z-index: -3;
+}
+
+/* Different types of roads*/
+way[highway=tertiary]{
+    z-index: 6;
+    width: 2;
+    color: #d6d919;
+}
+way[highway=unclassified]{
+    z-index: 6;
+    width: 2;
+    casing-color: #D0D0D0;
+    casing-width: 2;
+}
+way[highway=residential]{
+    z-index: 6;
+    width: 2;
+    casing-color: #82fa19;
+    casing-width: 2;
+}
+way[highway=track]{
+    width: 4;
+    color: peru;
+    dashes: 12,9;
+    casing-color: #737373;
+    casing-width: 1;
+}
+way[highway=service]{
+    z-index: 6;
+    width: 2;
+    casing-color: #737373;
+    casing-width: 1;
+}
+
+/* residential landuse*/
+area[landuse=residential]{
+    fill-color:#EB6D69
+}
+
+/* Different types of waterways*/
+
+way[waterway=stream]{
+    width: 2;
+    color: DeepSkyBlue;
+}
+
+way[waterway=river]{
+    width: 3;
+}
+
+
+/* For mapping after earthquakes in Turkey and Syria february 2023*/
+way[destroyed:building=yes] {
+    width: 4;
+    color: white;
+    dashes: 12,9;
+    dashes-background-color: red;
+}
+
+/* Highlighting end of highway*/
+way[highway]!:closed >[index=1] node|z15-!:connection!:tagged,
+way[highway]!:closed >[index=-1] node|z15-!:connection!:tagged{ 
+     icon-image: "https://raw.githubusercontent.com/Patrik-Br/MyPaintStyle/main/icons/unconnected%20way.png";
+    icon-height: 30;
+    icon-offset: 8;
+    z-index: -3;
+}
