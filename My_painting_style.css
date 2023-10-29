@@ -73,7 +73,7 @@ node[/^damage:/]{
 way[highway=tertiary]{
     z-index: 6;
     width: 2;
-    color: #b319d9;
+    color: #dbde0e;
 }
 way[highway=unclassified]{
     z-index: 6;
