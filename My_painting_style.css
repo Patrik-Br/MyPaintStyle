@@ -2,7 +2,11 @@
  * HOT Tasking Manager
  */
 
-/* Style the Tasks Grid geojson in a similar way to the TM itself, */
+
+/* CODE THAT IS WRITTEN BELOW SHOWS ON TOP OF THE CODE WRITTEN ABOVE */
+
+/* Taskgrid code was written by Kenneth, I just slightly edited it */
+/* Style the Tasks Grid geojson in a similar way to the TM itself */
 way[taskStatus=VALIDATED]   { fill-color: green;   fill-opacity: 15%; z-index: -1; }
 way[taskStatus=BADIMAGERY]  { fill-color: silver;  fill-opacity: 15%; }
 way[taskStatus=MAPPED]      { fill-color: blue; fill-opacity: 15%; }
@@ -32,7 +36,11 @@ node[building]{
     text-halo-radius: 2;
     font-size: 15px;
     font-weight: bold;
-    fill-color: purple;
+}
+
+/* Building color*/
+way[building]{
+    fill-color: darkgreen;
 }
 
 /* Building tagged as anything else then yes */
@@ -43,7 +51,7 @@ way[building][building!=yes]{
     text-halo-radius: 2;
     font-size: 15px;
     font-weight: bold;
-    fill-color: purple;
+    fill-color: orange;
 }
 
 /* Building tagged as building = yes AND layer = x */
@@ -56,18 +64,7 @@ way[building][building!=roof][layer]{
     font-weight: bold;
     fill-color: purple;
 }
-/* Way with tagged node as damage:  */
-node[/^damage:/] < way[highway] { 
-    dashes: 12,9;
-    dashes-background-color: red;
-}
-/* Node tagged as damage:  */
-node[/^damage:/]{ 
-    icon-image: "https://raw.githubusercontent.com/Patrik-Br/MyPaintStyle/main/icons/damage.png";
-    icon-height: 20;
-    icon-offset: 8;
-    z-index: -3;
-}
+
 
 /* Different types of roads*/
 way[highway=tertiary]{
@@ -107,7 +104,6 @@ area[landuse=residential]{
 }
 
 /* Different types of waterways*/
-
 way[waterway=stream]{
     width: 2;
     color: DeepSkyBlue;
@@ -117,6 +113,18 @@ way[waterway=river]{
     width: 3;
 }
 
+/* For mapping after earthquakes in Morocco october 2023 - Way with tagged node as damage:  */
+node[/^damage:/] < way[highway] { 
+    dashes: 12,9;
+    dashes-background-color: red;
+}
+/* For mapping after earthquakes in Morocco october 2023 - Node tagged as damage:  */
+node[/^damage:/]{ 
+    icon-image: "https://raw.githubusercontent.com/Patrik-Br/MyPaintStyle/main/icons/damage.png";
+    icon-height: 20;
+    icon-offset: 8;
+    z-index: -3;
+}
 
 /* For mapping after earthquakes in Turkey and Syria february 2023*/
 way[destroyed:building=yes] {
