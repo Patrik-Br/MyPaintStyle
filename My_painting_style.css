@@ -40,7 +40,8 @@ node[building]{
 
 /* Building color*/
 way[building]{
-    fill-color: darkgreen;
+    color: DarkTurquoise;
+    width: 2;
 }
 
 /* Building tagged as anything else then yes */
