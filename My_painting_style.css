@@ -40,9 +40,9 @@ node[building]{
 
 /* Building color*/
 way[building]{
-    color: DarkTurquoise;
-    width: 2;
-}
+    color: #00c0b0;
+    width: 2;     /* Didn't worked without changing the width */
+} 
 
 /* Building tagged as anything else then yes */
 way[building][building!=yes]{
