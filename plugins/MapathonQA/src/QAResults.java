@@ -15,7 +15,8 @@ public class QAResults {
     public int issueMappers;
 
     public List<OsmPrimitive> nonYesBuildingTags = new ArrayList<>();
-    public Set<OsmPrimitive> overlappingBuildings = new LinkedHashSet<>();
+    public CheckOverlappingBuildingsAction.OverlapResult overlappingBuildings
+        = new CheckOverlappingBuildingsAction.OverlapResult(new LinkedHashSet<>(), 0);
     public Set<OsmPrimitive> buildingsOnHighways  = new LinkedHashSet<>();
     public List<OsmPrimitive> nonOrthogonalBuildings = new ArrayList<>();
     public List<OsmPrimitive> buildingsWithLayerTag  = new ArrayList<>();
@@ -26,7 +27,7 @@ public class QAResults {
     public Set<OsmPrimitive> allFlagged() {
         Set<OsmPrimitive> all = new LinkedHashSet<>();
         for (OsmPrimitive p : nonYesBuildingTags)    if (p!=null) all.add(p);
-        for (OsmPrimitive p : overlappingBuildings)   if (p!=null) all.add(p);
+        for (OsmPrimitive p : overlappingBuildings.flaggedBuildings) if (p!=null) all.add(p);
         for (OsmPrimitive p : buildingsOnHighways)    if (p!=null) all.add(p);
         for (OsmPrimitive p : nonOrthogonalBuildings) if (p!=null) all.add(p);
         for (OsmPrimitive p : buildingsWithLayerTag)  if (p!=null) all.add(p);

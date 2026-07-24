@@ -78,7 +78,8 @@ public class GenerateDemoReportAction extends AbstractAction {
         for (int i = 0; i < 15; i++) r.untaggedObjects.add(null);
 
         // Sets deduplicate nulls -> use FixedSizeSet to report a fixed count
-        r.overlappingBuildings = new FixedSizeSet(14);
+        // Overlapping buildings: 14 flagged, 3 of them exact duplicates
+        r.overlappingBuildings = new CheckOverlappingBuildingsAction.OverlapResult(new FixedSizeSet(14), 3);
         r.buildingsOnHighways  = new FixedSizeSet(6);
 
         // Shared nodes: 12 shared nodes across 8 affected buildings

@@ -1,6 +1,9 @@
 package org.openstreetmap.josm.plugins.mapathonqa;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.Way;
 
@@ -92,6 +95,32 @@ public class GeometryUtil {
             if (raw > untilSeconds) return false;
         }
         return true;
+    }
+
+    /**
+     * True if a and b are closed ways tracing the exact same ring of corner
+     * coordinates (same set of points, regardless of starting node or winding
+     * direction) - e.g. a building accidentally duplicated via copy/paste.
+     * Coordinates must match exactly, so two independent manual traces of the
+     * same real-world building (which never land on identical lat/lon) won't
+     * be flagged here - only true duplicates.
+     */
+    public static boolean isExactDuplicate(Way a, Way b) {
+        List<Node> an = a.getNodes(), bn = b.getNodes();
+        int as = an.size(), bs = bn.size();
+        if (as != bs || as < 4) return false;
+        Set<LatLon> aSet = new HashSet<>(), bSet = new HashSet<>();
+        for (int i = 0; i < as - 1; i++) {
+            Node nd = an.get(i);
+            if (nd == null || nd.getCoor() == null) return false;
+            aSet.add(nd.getCoor());
+        }
+        for (int i = 0; i < bs - 1; i++) {
+            Node nd = bn.get(i);
+            if (nd == null || nd.getCoor() == null) return false;
+            bSet.add(nd.getCoor());
+        }
+        return aSet.equals(bSet);
     }
 
     public static boolean waysShareNode(Way a, Way b) {

@@ -47,7 +47,7 @@ This produces `MapathonQA.jar` in this folder — copy to JOSM's plugins folder 
 | `SetReportFolderAction.java` | Lets the user override where HTML reports are saved (JOSM preference `mapathonqa.reportDir`) |
 | `HistoryLogger.java` | Appends one row per real QA run to a persistent `MapathonQA_history.csv` for tracking quality trends over time |
 | `CheckNonYesBuildingTagsAction.java` | Check 1: building ≠ yes |
-| `CheckOverlappingBuildingsAction.java` | Check 2: overlapping/contained buildings |
+| `CheckOverlappingBuildingsAction.java` | Check 2: overlapping/contained buildings, including exact-duplicate ways (`GeometryUtil.isExactDuplicate`) |
 | `CheckBuildingsOnHighwaysAction.java` | Check 3: buildings crossing roads |
 | `CheckNonOrthogonalBuildingsAction.java` | Check 4: non-square corners (ported from Mapathoner's `Helper.that_building()`, see Credits) |
 | `CheckBuildingLayerTagAction.java` | Check 5: buildings with layer=* tag |
@@ -82,6 +82,9 @@ Task grid loaded via OpenLocationAction reflection (tries 3 method signatures fo
 - Meta strip, two summary cards, issues table, recommendations
 - Saved to the folder configured via **MapathonQA → Set Report Save Folder...** (JOSM preference
   `mapathonqa.reportDir`); if unset or invalid, falls back to ~/Downloads/, then Desktop, then home
+- Overlapping-buildings row note gets a trailing "N building(s) were duplicated." clause appended
+  only when `QAResults.overlappingBuildings.duplicateBuildingCount > 0` — no separate report row
+  or column for duplicates, they're folded into the existing overlap count/selection
 
 `ReportWriter.writeDemoReport(QAResults)` wraps `write()` and injects a blue demo banner.
 

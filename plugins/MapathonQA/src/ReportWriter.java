@@ -94,8 +94,10 @@ public class ReportWriter {
             w.write("<table><thead><tr><th>Check</th><th>Issues</th><th>Notes</th></tr></thead><tbody>\n");
             row(w, "Non-yes building tags", nonYes, "High",
                 "Buildings tagged differently than building=yes.");
-            row(w, "Overlapping buildings", overlap, "High",
-                "Buildings that geometrically overlap or are contained within another building (each count = one pair).");
+            String overlapNote = "Buildings that geometrically overlap or are contained within another building (each count = one pair).";
+            int duplicates = r.overlappingBuildings.duplicateBuildingCount;
+            if (duplicates > 0) overlapNote += " " + duplicates + " building(s) were duplicated.";
+            row(w, "Overlapping buildings", overlap, "High", overlapNote);
             row(w, "Building outlines that cross a highway", onRoads, "High",
                 "Building drawn through an existing highway.");
             row(w, "Non-orthogonal buildings", nonOrtho, "High",
