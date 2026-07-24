@@ -7,6 +7,13 @@ Post-mapathon data quality checker for Missing Maps.
 GPLv3 — see [`LICENSE`](LICENSE). JOSM core is "GPLv2 or later," which makes GPLv3 a compatible
 choice for plugins built against it.
 
+## Credits
+
+The non-orthogonal building check (`CheckNonOrthogonalBuildingsAction.java`) ports the
+classification logic from **Mapathoner**'s `Helper.that_building()` — same thresholds, same
+branch structure — reimplemented here using JOSM's own `Way.getAngles()`. Mapathoner is by
+qeef: https://mapathoner.mapathon.cz/
+
 ## Build
 
 From within this `MapathonQA/` folder (needs JDK 17+):
@@ -24,7 +31,10 @@ This produces `MapathonQA.jar` in this folder — copy to JOSM's plugins folder 
 - Add menu items with `menuRoot.add(new JMenuItem(action))` — NOT `MainMenu.add()`
 - `addMenu()` signature: `(name, tooltip, mnemonic, position, helpId)`
 - `SimpleDateFormat` MUST use `sdf.setTimeZone(TimeZone.getTimeZone("UTC"))` — all times are UTC
-- Geometry uses raw lat/lon with `cos(lat)` correction on longitude — matches JOSM projected coords
+- `Way.getAngles()` (used by the non-orthogonal check) returns corner angles computed from
+  projected `EastNorth` coordinates — no manual lat/lon correction needed
+- `GeometryUtil`'s ray-casting/segment-intersection checks use raw lat/lon directly (no
+  projection correction — fine at the scale of a single building/task)
 
 ## Architecture
 
@@ -39,11 +49,11 @@ This produces `MapathonQA.jar` in this folder — copy to JOSM's plugins folder 
 | `CheckNonYesBuildingTagsAction.java` | Check 1: building ≠ yes |
 | `CheckOverlappingBuildingsAction.java` | Check 2: overlapping/contained buildings |
 | `CheckBuildingsOnHighwaysAction.java` | Check 3: buildings crossing roads |
-| `CheckNonOrthogonalBuildingsAction.java` | Check 4: non-square corners (matches mapathoner.jar algorithm exactly) |
+| `CheckNonOrthogonalBuildingsAction.java` | Check 4: non-square corners (ported from Mapathoner's `Helper.that_building()`, see Credits) |
 | `CheckBuildingLayerTagAction.java` | Check 5: buildings with layer=* tag |
 | `CheckBuildingsWithSharedNodesAction.java` | Check 6: shared nodes between buildings and other objects |
 | `CheckUntaggedWaysAction.java` | Check 7: untagged objects — ways, plus standalone untagged nodes not used as a way vertex (multipolygon members excluded) |
-| `GeometryUtil.java` | Ray-casting, segment intersection, cos(lat) angle calc, time filter |
+| `GeometryUtil.java` | Ray-casting, segment intersection, time filter |
 | `QAResults.java` | Data container for all check results |
 | `ReportWriter.java` | Generates branded HTML report (MM logo embedded as base64 SVG) |
 

@@ -3,8 +3,15 @@ import java.awt.BorderLayout; import java.awt.event.ActionEvent;
 import java.util.*; import javax.swing.*;
 import org.openstreetmap.josm.data.osm.*;
 import org.openstreetmap.josm.gui.MainApplication; import org.openstreetmap.josm.tools.I18n;
+import org.openstreetmap.josm.tools.Pair;
+/**
+ * Classification logic ported from Mapathoner's Helper.that_building() (Mapathoner by qeef,
+ * https://mapathoner.mapathon.cz/): same thresholds and branch structure, driven by JOSM's own
+ * Way.getAngles() (projected EastNorth corner angles) instead of a hand-rolled lat/lon calc,
+ * and with no node-count cap, matching Mapathoner's implementation.
+ */
 public class CheckNonOrthogonalBuildingsAction extends AbstractAction {
-    private static final double SQ_TH=1.0, RD_TH=1.0; private static final int MAX_N=18;
+    private static final double SQ_TH=1.0, RD_TH=1.0;
     public CheckNonOrthogonalBuildingsAction() { super(I18n.tr("Check: Non-orthogonal Buildings")); }
     @Override public void actionPerformed(ActionEvent e) {
         DataSet ds = MainApplication.getLayerManager().getEditDataSet();
@@ -31,24 +38,16 @@ public class CheckNonOrthogonalBuildingsAction extends AbstractAction {
         for (Way w : ds.getWays()) {
             if (!w.isClosed()||!w.hasKey("building")) continue;
             if (!GeometryUtil.isMappedDuring(w,since,until)) continue;
-            int nc=w.getNodesCount()-1; if (nc<3||nc>=MAX_N) continue;
+            int nc=w.getNodesCount()-1; if (nc<3) continue;
             if (classifyBuilding(w,nc,SQ_TH,RD_TH)==4) f.add(w);
         }
         return f;
     }
     static int classifyBuilding(Way w, int n, double sqTh, double rdTh) {
-        List<Node> nodes=w.getNodes(); double ep=180.0-360.0/n;
-        double clat=0; int valid=0;
-        for (int i=0;i<n;i++) { Node nd=nodes.get(i); if (nd!=null&&nd.getCoor()!=null) { clat+=nd.lat(); valid++; } }
-        double cos=valid>0?Math.cos(Math.toRadians(clat/valid)):1.0; if (cos<0.01) cos=0.01;
+        double ep=180.0-360.0/n;
         double ssd=0; int iSq=0,iRd=0,nz=0,mSq=0,mRd=0; final double M=15.0;
-        for (int i=0;i<n;i++) {
-            Node p=nodes.get((i-1+n)%n),c=nodes.get(i),nx=nodes.get((i+1)%n);
-            if (p==null||c==null||nx==null||p.getCoor()==null||c.getCoor()==null||nx.getCoor()==null) continue;
-            double ax=(p.lon()-c.lon())*cos,ay=p.lat()-c.lat(),bx=(nx.lon()-c.lon())*cos,by=nx.lat()-c.lat();
-            double la=Math.sqrt(ax*ax+ay*ay),lb=Math.sqrt(bx*bx+by*by); if (la<1e-10||lb<1e-10) continue;
-            double dot=Math.max(-1.0,Math.min(1.0,(ax*bx+ay*by)/(la*lb)));
-            double ang=Math.toDegrees(Math.acos(dot));
+        for (Pair<Double,Node> pair : w.getAngles()) {
+            double ang=pair.a;
             double sd=Math.min(Math.abs(90.0-ang),Math.abs(180.0-ang)); ssd+=sd;
             if (sd<sqTh) iSq++; else if (sd<M) mSq++;
             double rd=Math.abs(ep-ang); if (rd<rdTh) iRd++; else if (rd<M) mRd++;
@@ -56,7 +55,7 @@ public class CheckNonOrthogonalBuildingsAction extends AbstractAction {
         }
         ssd=ssd%90.0;
         if (iSq==n) return 2; if (iRd==n&&n>4) return 1;
-        if (iRd+mRd>iSq+mSq) return mRd>0?3:4;
+        if (iRd+mRd>iSq+mSq) return mRd>0?3:0;
         if (mSq>0) return 4; if (ssd<sqTh&&nz==0) return 2; return 4;
     }
 }
