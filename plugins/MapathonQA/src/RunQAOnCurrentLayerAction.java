@@ -24,6 +24,7 @@ import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.I18n;
 
 public class RunQAOnCurrentLayerAction extends AbstractAction {
@@ -160,11 +161,13 @@ public class RunQAOnCurrentLayerAction extends AbstractAction {
                     }
 
                     File historyFile = null;
-                    try { historyFile = HistoryLogger.appendRow(r); }
-                    catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null,
-                            "Could not update history log:\n" + ex.getMessage(),
-                            "MapathonQA", JOptionPane.WARNING_MESSAGE);
+                    if (Config.getPref().getBoolean(HistoryLogger.PREF_INCLUDE_HISTORY, false)) {
+                        try { historyFile = HistoryLogger.appendRow(r); }
+                        catch (Exception ex) {
+                            JOptionPane.showMessageDialog(null,
+                                "Could not update history log:\n" + ex.getMessage(),
+                                "MapathonQA", JOptionPane.WARNING_MESSAGE);
+                        }
                     }
 
                     int total = r.totalIssues();

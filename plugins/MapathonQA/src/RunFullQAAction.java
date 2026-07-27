@@ -38,6 +38,7 @@ import javax.swing.SwingWorker;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.I18n;
 
 public class RunFullQAAction extends AbstractAction {
@@ -52,8 +53,6 @@ public class RunFullQAAction extends AbstractAction {
     private void showStep1Dialog() {
         JDialog dlg = new JDialog((java.awt.Frame) null, "MapathonQA \u2013 Step 1: Project & Time Window", true);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        dlg.setSize(460, 330);
-        dlg.setLocationRelativeTo(null);
         bindEscapeToClose(dlg);
 
         JPanel main = new JPanel(new GridBagLayout());
@@ -99,6 +98,12 @@ public class RunFullQAAction extends AbstractAction {
         JTextField endField = new JTextField(defaultEnd, 16);
         gc.gridx=1; main.add(endField, gc);
 
+        gc.gridx=0; gc.gridy=7; gc.gridwidth=2; gc.insets = new Insets(14, 4, 6, 4);
+        JCheckBox chkHistory = new JCheckBox("Include this report in MapathonQA_history.csv",
+            Config.getPref().getBoolean(HistoryLogger.PREF_INCLUDE_HISTORY, false));
+        chkHistory.setToolTipText("Appends one row to a persistent history CSV for tracking quality trends across mapathons over time");
+        main.add(chkHistory, gc);
+
         JPanel btns = new JPanel();
         JButton btnFind = new JButton("Find Mapathon Tasks \u2192");
         JButton btnX    = new JButton("Cancel");
@@ -114,6 +119,7 @@ public class RunFullQAAction extends AbstractAction {
             MapathonQAPlugin.lastStart        = startVal;
             MapathonQAPlugin.lastEnd          = endVal;
             MapathonQAPlugin.lastMapathonName = mapathonNameField.getText().trim();
+            Config.getPref().putBoolean(HistoryLogger.PREF_INCLUDE_HISTORY, chkHistory.isSelected());
             dlg.dispose();
             fetchTaskIds(pid, startVal, endVal);
         });
@@ -121,6 +127,9 @@ public class RunFullQAAction extends AbstractAction {
         dlg.setLayout(new BorderLayout());
         dlg.add(main, BorderLayout.CENTER);
         dlg.add(btns, BorderLayout.SOUTH);
+        dlg.pack();
+        dlg.setMinimumSize(dlg.getSize());
+        dlg.setLocationRelativeTo(null);
         dlg.setVisible(true);
     }
 

@@ -15,8 +15,12 @@ import java.util.TimeZone;
  * organisers can track data quality trends across mapathons over time in
  * Excel/Sheets. Lives in the same folder as HTML reports (see ReportWriter);
  * the same file is reused/appended to on every run, never overwritten.
+ * Opt-in via the Step 1 checkbox (see PREF_INCLUDE_HISTORY) - off by default.
  */
 public class HistoryLogger {
+
+    /** Whether a real QA run should append a row to the history CSV. Off by default - opt-in via the Step 1 checkbox. */
+    public static final String PREF_INCLUDE_HISTORY = "mapathonqa.includeInHistory";
 
     private static final String FILENAME = "MapathonQA_history.csv";
 

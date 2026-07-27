@@ -45,7 +45,7 @@ This produces `MapathonQA.jar` in this folder — copy to JOSM's plugins folder 
 | `RunQAOnCurrentLayerAction.java` | Runs all 7 checks with progress dialog, generates report |
 | `GenerateDemoReportAction.java` | Demo report with realistic simulated issue counts across all 7 checks |
 | `SetReportFolderAction.java` | Lets the user override where HTML reports are saved (JOSM preference `mapathonqa.reportDir`) |
-| `HistoryLogger.java` | Appends one row per real QA run to a persistent `MapathonQA_history.csv` for tracking quality trends over time |
+| `HistoryLogger.java` | Appends one row per real QA run to a persistent `MapathonQA_history.csv` for tracking quality trends over time — opt-in, off by default |
 | `CheckNonYesBuildingTagsAction.java` | Check 1: building ≠ yes |
 | `CheckOverlappingBuildingsAction.java` | Check 2: overlapping/contained buildings, including exact-duplicate ways (`GeometryUtil.isExactDuplicate`) |
 | `CheckBuildingsOnHighwaysAction.java` | Check 3: buildings crossing roads |
@@ -90,7 +90,10 @@ Task grid loaded via OpenLocationAction reflection (tries 3 method signatures fo
 
 ## History log
 
-`HistoryLogger.appendRow(QAResults)` appends one CSV row per real `Run QA on Current Layer`
+Opt-in via a checkbox on the Step 1 (Project & Time Window) dialog of **Run Full QA Check...**
+— off by default, remembered as a JOSM preference (`mapathonqa.includeInHistory`) once set, so it
+applies to subsequent **Run QA on Current Layer** runs too. When enabled, `HistoryLogger.appendRow(QAResults)`
+appends one CSV row per real `Run QA on Current Layer`
 execution to `MapathonQA_history.csv`, in the same folder as HTML reports. The file is created
 with a header + UTF-8 BOM (so Excel renders it correctly) on first use, then only ever appended
 to — never overwritten — so a series of mapathons accumulates in one file that can be opened
