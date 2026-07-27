@@ -28,15 +28,27 @@ public class MapathonQAPlugin extends Plugin {
         menuRoot.add(new JMenuItem(new RunFullQAAction()));
         menuRoot.add(new JMenuItem(new RunQAOnCurrentLayerAction()));
         menuRoot.addSeparator();
-        menuRoot.add(new JMenuItem(new CheckNonYesBuildingTagsAction()));
-        menuRoot.add(new JMenuItem(new CheckOverlappingBuildingsAction()));
-        menuRoot.add(new JMenuItem(new CheckBuildingsOnHighwaysAction()));
-        menuRoot.add(new JMenuItem(new CheckNonOrthogonalBuildingsAction()));
-        menuRoot.add(new JMenuItem(new CheckBuildingLayerTagAction()));
-        menuRoot.add(new JMenuItem(new CheckBuildingsWithSharedNodesAction()));
-        menuRoot.add(new JMenuItem(new CheckUntaggedWaysAction()));
-        menuRoot.addSeparator();
         menuRoot.add(new JMenuItem(new GenerateDemoReportAction()));
         menuRoot.add(new JMenuItem(new SetReportFolderAction()));
+        menuRoot.addSeparator();
+
+        // Standalone "select matching objects" actions - no time filter, run on demand.
+        JMenu individualChecks = new JMenu(I18n.tr("Individual Checks"));
+        individualChecks.add(new JMenuItem(new CheckNonYesBuildingTagsAction()));
+        individualChecks.add(new JMenuItem(new CheckOverlappingBuildingsAction()));
+        individualChecks.add(new JMenuItem(new CheckBuildingsOnHighwaysAction()));
+        individualChecks.add(new JMenuItem(new CheckNonOrthogonalBuildingsAction()));
+        individualChecks.add(new JMenuItem(new CheckBuildingLayerTagAction()));
+        individualChecks.add(new JMenuItem(new CheckBuildingsWithSharedNodesAction()));
+        individualChecks.add(new JMenuItem(new CheckUntaggedWaysAction()));
+        menuRoot.add(individualChecks);
+
+        // Ported from 3rdPassMM - kept in their own submenu (not mixed with the checks above)
+        // since these do NOT contribute to the QA report/RunQAOnCurrentLayerAction pipeline.
+        JMenu thirdPassChecks = new JMenu(I18n.tr("3rdPass Checks (Not in Report)"));
+        thirdPassChecks.add(new JMenuItem(new SelectHighwayClassificationMismatchAction()));
+        thirdPassChecks.add(new JMenuItem(new SelectResidentialWithMultiplePlaceNodesAction()));
+        thirdPassChecks.add(new JMenuItem(new SelectResidentialWithoutHighwayAction()));
+        menuRoot.add(thirdPassChecks);
     }
 }

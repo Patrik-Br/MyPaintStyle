@@ -16,7 +16,7 @@ public class QAResults {
 
     public List<OsmPrimitive> nonYesBuildingTags = new ArrayList<>();
     public CheckOverlappingBuildingsAction.OverlapResult overlappingBuildings
-        = new CheckOverlappingBuildingsAction.OverlapResult(new LinkedHashSet<>(), 0);
+        = new CheckOverlappingBuildingsAction.OverlapResult(new LinkedHashSet<>(), 0, 0);
     public Set<OsmPrimitive> buildingsOnHighways  = new LinkedHashSet<>();
     public List<OsmPrimitive> nonOrthogonalBuildings = new ArrayList<>();
     public List<OsmPrimitive> buildingsWithLayerTag  = new ArrayList<>();

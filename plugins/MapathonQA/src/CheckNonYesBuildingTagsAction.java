@@ -4,7 +4,7 @@ import java.util.*; import javax.swing.*;
 import org.openstreetmap.josm.data.osm.*;
 import org.openstreetmap.josm.gui.MainApplication; import org.openstreetmap.josm.tools.I18n;
 public class CheckNonYesBuildingTagsAction extends AbstractAction {
-    public CheckNonYesBuildingTagsAction() { super(I18n.tr("Check: Non-yes Building Tags")); }
+    public CheckNonYesBuildingTagsAction() { super(I18n.tr("Select Non-yes Building Tags")); }
     @Override public void actionPerformed(ActionEvent e) {
         DataSet ds = MainApplication.getLayerManager().getEditDataSet();
         if (ds == null) { JOptionPane.showMessageDialog(null, "No active OSM data layer found.", "MapathonQA", JOptionPane.WARNING_MESSAGE); return; }
@@ -18,7 +18,6 @@ public class CheckNonYesBuildingTagsAction extends AbstractAction {
                     List<OsmPrimitive> f = get();
                     if (f.isEmpty()) { JOptionPane.showMessageDialog(null, "No non-yes building tags found. All buildings use building=yes.", "MapathonQA", JOptionPane.INFORMATION_MESSAGE); return; }
                     ds.setSelected(f);
-                    JOptionPane.showMessageDialog(null, I18n.tr("{0} building(s) have a specific type tag (not building=yes).\n\nThey are now selected. In mapathons, only building=yes is\nrecommended unless the type is certain.", f.size()), "MapathonQA \u2013 Non-yes Building Tags", JOptionPane.WARNING_MESSAGE);
                 } catch (Exception ex) { prog.dispose(); JOptionPane.showMessageDialog(null, "Check failed:\n"+ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE); }
             }
         }.execute();

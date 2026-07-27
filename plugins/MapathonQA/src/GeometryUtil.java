@@ -1,11 +1,13 @@
 package org.openstreetmap.josm.plugins.mapathonqa;
 
+import java.awt.geom.Area;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.tools.Geometry;
 
 public class GeometryUtil {
 
@@ -36,17 +38,19 @@ public class GeometryUtil {
 
     private static double cross(double ux,double uy,double vx,double vy) { return ux*vy-uy*vx; }
 
-    public static boolean waysOverlap(Way a, Way b) {
-        List<Node> an=a.getNodes(), bn=b.getNodes();
-        int as=an.size(), bs=bn.size();
-        if (as<3||bs<3) return false;
-        for (int i=0;i<as-1;i++) for (int j=0;j<bs-1;j++)
-            if (segmentsIntersect(an.get(i),an.get(i+1),bn.get(j),bn.get(j+1))) return true;
-        Node firstA=an.get(0);
-        if (firstA!=null&&nodeInsidePolygon(firstA.lat(),firstA.lon(),bn)) return true;
-        Node firstB=bn.get(0);
-        if (firstB!=null&&nodeInsidePolygon(firstB.lat(),firstB.lon(),an)) return true;
-        return false;
+    /**
+     * Classifies how two building ways' areas relate, using JOSM's own
+     * Geometry.polygonIntersection (the same Area-based math and 1e-4 epsilon
+     * behind the built-in validator's "Overlapping buildings"/"Building inside
+     * building" MapCSS rules), so our counts agree with JOSM's Validation
+     * Results panel instead of a hand-rolled segment/vertex heuristic that
+     * over-counted. Returns null for degenerate (empty-area) ways.
+     */
+    public static Geometry.PolygonIntersection classifyOverlap(Way a, Way b) {
+        Area areaA = Geometry.getAreaEastNorth(a);
+        Area areaB = Geometry.getAreaEastNorth(b);
+        if (areaA == null || areaB == null || areaA.isEmpty() || areaB.isEmpty()) return null;
+        return Geometry.polygonIntersection(areaA, areaB, 1.0E-4);
     }
 
     public static boolean highwayCrossesBuilding(Way highway, Way building) {

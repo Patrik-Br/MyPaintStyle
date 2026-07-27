@@ -37,7 +37,7 @@ public class CheckBuildingsWithSharedNodesAction extends AbstractAction {
     }
 
     public CheckBuildingsWithSharedNodesAction() {
-        super(I18n.tr("Check: Buildings with Shared Nodes"));
+        super(I18n.tr("Select Buildings with Shared Nodes"));
     }
 
     @Override
@@ -54,10 +54,6 @@ public class CheckBuildingsWithSharedNodesAction extends AbstractAction {
                     SharedNodeResult r = get();
                     if (r.isEmpty()) { JOptionPane.showMessageDialog(null, "No buildings with shared nodes found.", "MapathonQA", JOptionPane.INFORMATION_MESSAGE); return; }
                     ds.setSelected(r.affectedBuildings);
-                    JOptionPane.showMessageDialog(null,
-                        I18n.tr("{0} shared node(s) found across {1} building(s).\n\nAffected buildings are now selected. Buildings should\nhave their own independent nodes \u2014 shared nodes with\nhighways or other buildings are usually a mapping error.",
-                            r.sharedNodeCount, r.affectedBuildings.size()),
-                        "MapathonQA \u2013 Buildings with Shared Nodes", JOptionPane.WARNING_MESSAGE);
                 } catch (Exception ex) { prog.dispose(); JOptionPane.showMessageDialog(null, "Check failed:\n"+ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE); }
             }
         }.execute();

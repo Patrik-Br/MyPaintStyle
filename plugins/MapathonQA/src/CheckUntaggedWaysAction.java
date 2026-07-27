@@ -4,7 +4,7 @@ import java.util.*; import javax.swing.*;
 import org.openstreetmap.josm.data.osm.*;
 import org.openstreetmap.josm.gui.MainApplication; import org.openstreetmap.josm.tools.I18n;
 public class CheckUntaggedWaysAction extends AbstractAction {
-    public CheckUntaggedWaysAction() { super(I18n.tr("Check: Untagged Objects")); }
+    public CheckUntaggedWaysAction() { super(I18n.tr("Select Untagged Objects")); }
     @Override public void actionPerformed(ActionEvent e) {
         DataSet ds = MainApplication.getLayerManager().getEditDataSet();
         if (ds == null) { JOptionPane.showMessageDialog(null, "No active OSM data layer found.", "MapathonQA", JOptionPane.WARNING_MESSAGE); return; }
@@ -18,7 +18,6 @@ public class CheckUntaggedWaysAction extends AbstractAction {
                     List<OsmPrimitive> f = get();
                     if (f.isEmpty()) { JOptionPane.showMessageDialog(null, "No untagged objects found.", "MapathonQA", JOptionPane.INFORMATION_MESSAGE); return; }
                     ds.setSelected(f);
-                    JOptionPane.showMessageDialog(null, I18n.tr("{0} untagged object(s) found (nodes or ways).\n\nThey are now selected. Untagged objects have no meaning\nin OSM and should be deleted or tagged appropriately.", f.size()), "MapathonQA \u2013 Untagged Objects", JOptionPane.WARNING_MESSAGE);
                 } catch (Exception ex) { prog.dispose(); JOptionPane.showMessageDialog(null, "Check failed:\n"+ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE); }
             }
         }.execute();

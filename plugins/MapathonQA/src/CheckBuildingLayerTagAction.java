@@ -4,7 +4,7 @@ import java.util.*; import javax.swing.*;
 import org.openstreetmap.josm.data.osm.*;
 import org.openstreetmap.josm.gui.MainApplication; import org.openstreetmap.josm.tools.I18n;
 public class CheckBuildingLayerTagAction extends AbstractAction {
-    public CheckBuildingLayerTagAction() { super(I18n.tr("Check: Buildings with Layer Tag")); }
+    public CheckBuildingLayerTagAction() { super(I18n.tr("Select Buildings with Layer Tag")); }
     @Override public void actionPerformed(ActionEvent e) {
         DataSet ds = MainApplication.getLayerManager().getEditDataSet();
         if (ds == null) { JOptionPane.showMessageDialog(null, "No active OSM data layer found.", "MapathonQA", JOptionPane.WARNING_MESSAGE); return; }
@@ -18,7 +18,6 @@ public class CheckBuildingLayerTagAction extends AbstractAction {
                     List<OsmPrimitive> f = get();
                     if (f.isEmpty()) { JOptionPane.showMessageDialog(null, "No buildings with a layer tag found.", "MapathonQA", JOptionPane.INFORMATION_MESSAGE); return; }
                     ds.setSelected(f);
-                    JOptionPane.showMessageDialog(null, I18n.tr("{0} building(s) have a layer=* tag.\n\nThey are now selected. Please review and remove the tag.", f.size()), "MapathonQA \u2013 Buildings with Layer Tag", JOptionPane.WARNING_MESSAGE);
                 } catch (Exception ex) { prog.dispose(); JOptionPane.showMessageDialog(null, "Check failed:\n"+ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE); }
             }
         }.execute();

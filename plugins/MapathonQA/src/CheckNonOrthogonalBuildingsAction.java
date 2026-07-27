@@ -12,7 +12,7 @@ import org.openstreetmap.josm.tools.Pair;
  */
 public class CheckNonOrthogonalBuildingsAction extends AbstractAction {
     private static final double SQ_TH=1.0, RD_TH=1.0;
-    public CheckNonOrthogonalBuildingsAction() { super(I18n.tr("Check: Non-orthogonal Buildings")); }
+    public CheckNonOrthogonalBuildingsAction() { super(I18n.tr("Select Non-orthogonal Buildings")); }
     @Override public void actionPerformed(ActionEvent e) {
         DataSet ds = MainApplication.getLayerManager().getEditDataSet();
         if (ds == null) { JOptionPane.showMessageDialog(null, "No active OSM data layer found.", "MapathonQA", JOptionPane.WARNING_MESSAGE); return; }
@@ -26,7 +26,6 @@ public class CheckNonOrthogonalBuildingsAction extends AbstractAction {
                     List<OsmPrimitive> f = get();
                     if (f.isEmpty()) { JOptionPane.showMessageDialog(null, "No non-orthogonal buildings found.", "MapathonQA", JOptionPane.INFORMATION_MESSAGE); return; }
                     ds.setSelected(f);
-                    JOptionPane.showMessageDialog(null, I18n.tr("{0} building(s) have non-orthogonal corners.\n\nThey are now selected. Use the Orthogonalize Shape\ntool (Q key in JOSM) to fix the corners.", f.size()), "MapathonQA \u2013 Non-orthogonal Buildings", JOptionPane.WARNING_MESSAGE);
                 } catch (Exception ex) { prog.dispose(); JOptionPane.showMessageDialog(null, "Check failed:\n"+ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE); }
             }
         }.execute();
