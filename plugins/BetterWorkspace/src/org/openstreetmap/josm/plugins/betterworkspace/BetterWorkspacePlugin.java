@@ -63,6 +63,8 @@ extends Plugin {
         bwMenu.addSeparator();
         bwMenu.add(new LoadTmTaskGridAction());
         bwMenu.add(new SetTmApiTokenAction());
+        bwMenu.add(new ToggleActiveLayerAction());
+        bwMenu.add(new MultiValidationPrepAction());
         bwMenu.addSeparator();
         bwMenu.add(rotateCw);
         bwMenu.add(rotateCcw);

@@ -7,6 +7,9 @@ it to your toolbar via JOSM's own Preferences → Shortcuts / toolbar customizat
 - Load a HOT Tasking Manager project's task grid as a data layer — including **private and draft**
   projects you have access to, not just public ones — via your personal TM API token.
 - Set/update that HOT TM API token.
+- Toggle the visibility of the currently active layer.
+- Multi-validation prep — select all ways in the layer below the active one and add them to the
+  todo plugin's list, for paging through task borders during a second/third mapping pass.
 - Rotate the whole map view (data + imagery) clockwise/counter-clockwise, or reset it.
 
 **Note on "More tools":** that top-level menu isn't part of JOSM core's own default UI — core
@@ -31,6 +34,11 @@ Source was recovered by decompiling the previously jar-only plugin with
 before then. `BetterWorkspacePlugin.java`, `RotatingProjection.java`, `ArrangePanelsDialog.java`
 and `PanelReorderer.java` are that recovered original code (compiles and packages identically to
 the original jar, `AuthorSelectHook.class` aside). `AuthorSelectHook.java` is new.
+
+`ToggleActiveLayerAction.java`, `MultiValidationPrepAction.java` and `TodoBridge.java` are ported
+from [3rdPassJOSMPlugin](https://github.com/MissingMaps/3rdPassJOSMPlugin) ("ThirdPassMM"), which
+this plugin's two features replace — decompiled with
+[Vineflower](https://github.com/Vineflower/vineflower) (no `.java` source existed there either).
 
 ## Build
 
@@ -86,3 +94,20 @@ documented API. If a future JOSM version renames/removes `userTable`, `popupMenu
 the Authors panel just goes back to only offering "Copy". If that happens, the fix is to re-run
 `javap -p` against the new `josm-tested.jar` on `UserListDialog` and `UserListDialog$UserTableModel`
 to find the new names.
+
+## Multi-validation prep and the todo-plugin bridge
+
+**Multi-validation prep** looks at the layer directly below the currently active one in the Layers
+panel, switches to it, selects all its ways, hands them to the todo plugin, then switches back —
+one click instead of four to set up "page through every task border with the todo dialog" for a
+second/third mapping pass.
+
+`TodoBridge.java` is a reflection bridge (no compile-time dependency on any todo plugin jar) that
+looks for a `ToggleDialog` whose class name is exactly `org.openstreetmap.josm.plugins.todo.TodoDialog`
+— matched by this user's own `Todo_patrik` fork as well as the standard "todo" plugin, since the
+fork kept the same package/class name. It tries the modern public `addItemsFromPrimitives(Collection)`
+method first; if that doesn't exist (older todo plugin versions), it falls back to reflectively
+invoking the dialog's private `actAdd`/`actSelect` action listeners directly, simulating clicks on
+the "Add" and "Select" buttons. Either way, if no matching dialog is found (todo plugin not
+installed) or all reflection paths fail, `addWaysToTodo` returns `false` and the action shows a
+warning dialog rather than throwing — same fail-soft approach as the Authors-panel hook above.
