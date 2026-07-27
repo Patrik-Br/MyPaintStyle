@@ -8,6 +8,7 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -22,6 +23,7 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -30,6 +32,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 
 import org.openstreetmap.josm.data.osm.DataSet;
@@ -51,6 +54,7 @@ public class RunFullQAAction extends AbstractAction {
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.setSize(460, 330);
         dlg.setLocationRelativeTo(null);
+        bindEscapeToClose(dlg);
 
         JPanel main = new JPanel(new GridBagLayout());
         main.setBorder(BorderFactory.createEmptyBorder(16, 20, 8, 20));
@@ -149,6 +153,7 @@ public class RunFullQAAction extends AbstractAction {
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.setSize(840, 520);
         dlg.setLocationRelativeTo(null);
+        bindEscapeToClose(dlg);
 
         JPanel main = new JPanel(new GridBagLayout());
         main.setBorder(BorderFactory.createEmptyBorder(14, 18, 8, 18));
@@ -209,6 +214,12 @@ public class RunFullQAAction extends AbstractAction {
         dlg.add(scroll, BorderLayout.CENTER);
         dlg.add(btns, BorderLayout.SOUTH);
         dlg.setVisible(true);
+    }
+
+    /** Lets Esc close a dialog the same way its Cancel/Close button does - Swing doesn't bind this by default. */
+    static void bindEscapeToClose(JDialog dlg) {
+        dlg.getRootPane().registerKeyboardAction(ev -> dlg.dispose(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     private List<Integer> fetchMappedTaskIds(int projectId, String startTime, String endTime) throws Exception {

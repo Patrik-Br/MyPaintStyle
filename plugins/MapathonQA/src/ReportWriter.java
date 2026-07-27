@@ -50,8 +50,8 @@ public class ReportWriter {
             w.write("<img src=\'" + LOGO_URI + "\' alt=\'Missing Maps\'>");
             w.write("<div class=\'header-divider\'></div>");
             w.write("<div class=\'header-text\'>");
-            w.write("<h1>Thank you for organising your mapathon! 🗺️</h1>");
-            w.write("<p>Here's some friendly feedback on how it went &mdash; what to watch for next time</p>");
+            w.write("<h1>Thank you for organising a mapathon! 🗺️</h1>");
+            w.write("<p>Here's some friendly feedback on how it went and what to watch for next time</p>");
             w.write("</div></div>\n");
 
             w.write("<div class=\'page\'>\n");
@@ -89,8 +89,8 @@ public class ReportWriter {
             // ── ISSUES TABLE ─────────────────────────────────────────
             w.write("<div class=\'card\'>\n<h2>A few things worth a second look</h2>\n");
             w.write("<p class=\'lede\'>Nothing alarming here &mdash; just small tweaks that&#39;ll make the map even better.</p>\n");
-            w.write("<table><thead><tr><th>Check</th><th>Issues</th><th>Notes</th></tr></thead><tbody>\n");
-            row(w, "Non-yes building tags", nonYes,
+            w.write("<div class=\'table-wrap\'>\n<table><thead><tr><th>Check</th><th>Issues</th><th>Notes</th></tr></thead><tbody>\n");
+            row(w, "Buildings tagging", nonYes,
                 "Buildings tagged differently than building=yes.");
             String overlapNote = "Buildings that geometrically overlap or are contained within another building (each count = one pair).";
             int duplicates = r.overlappingBuildings.duplicateBuildingCount;
@@ -106,7 +106,7 @@ public class ReportWriter {
                 "Buildings sharing at least one node with another object (each count = one shared node, not a pair; " + sharedBldgs + " building(s) affected).");
             row(w, "Untagged objects", untagged,
                 "Nodes and ways with no tags, most likely mappers forgot to add a tag such as building=yes.");
-            w.write("</tbody></table>\n</div>\n");
+            w.write("</tbody></table>\n</div>\n</div>\n");
 
             // ── RECOMMENDATIONS ──────────────────────────────────────
             w.write("<div class=\'card\'>\n<h2>Handy tips for your next mapathon</h2>\n");
@@ -180,6 +180,19 @@ public class ReportWriter {
             + ".rec-item p { font-size: 13.5px; color: oklch(0.48 0.02 60); }\n"
             + ".footer { text-align: center; color: oklch(0.6 0.02 60); font-size: 13px; margin-top: 30px; padding-top: 18px; border-top: 1px solid oklch(0.9 0.01 70); }\n"
             + ".footer a { color: " + ACCENT + "; text-decoration: none; font-weight: 700; }\n"
+            + ".table-wrap { overflow-x: auto; }\n"
+            + "@media (max-width: 600px) {\n"
+            + "  .page { padding: 24px 16px 50px; }\n"
+            + "  .header { flex-direction: column; align-items: flex-start; padding: 22px 20px; gap: 12px; }\n"
+            + "  .header-divider { display: none; }\n"
+            + "  .header-text h1 { font-size: 22px; }\n"
+            + "  .header-text p { font-size: 13px; }\n"
+            + "  .meta-card, .card { padding: 20px 18px; }\n"
+            + "  .summary-strip { grid-template-columns: 1fr; }\n"
+            + "  .summary-card { padding: 20px 20px; gap: 16px; }\n"
+            + "  .summary-num { font-size: 36px; }\n"
+            + "  thead th, tbody td { padding: 10px 12px; font-size: 13px; }\n"
+            + "}\n"
             + "</style>\n</head>\n<body>\n";
     }
 
