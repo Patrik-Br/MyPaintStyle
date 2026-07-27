@@ -64,7 +64,7 @@ public class RunFullQAAction extends AbstractAction {
         main.add(new JLabel("<html><b>Mapathon Name</b> <small>(optional)</small></html>"), gc);
         gc.gridy=1; gc.gridwidth=1;
         gc.gridx=0; main.add(new JLabel("Name:"), gc);
-        JTextField mapathonNameField = new JTextField("", 20);
+        JTextField mapathonNameField = new JTextField(MapathonQAPlugin.lastMapathonName, 20);
         mapathonNameField.setToolTipText("Shown on the report, e.g. \"Kathmandu University Mapathon\"");
         gc.gridx=1; main.add(mapathonNameField, gc);
 
@@ -72,7 +72,8 @@ public class RunFullQAAction extends AbstractAction {
         main.add(new JLabel("<html><b>HOT Tasking Manager Project ID</b></html>"), gc);
         gc.gridy=3; gc.gridwidth=1;
         gc.gridx=0; main.add(new JLabel("Project ID:"), gc);
-        JTextField projectIdField = new JTextField("", 10);
+        JTextField projectIdField = new JTextField(
+            MapathonQAPlugin.lastProjectId > 0 ? String.valueOf(MapathonQAPlugin.lastProjectId) : "", 10);
         projectIdField.setToolTipText("HOT Tasking Manager project number, e.g. 50430");
         gc.gridx=1; main.add(projectIdField, gc);
 
@@ -86,16 +87,18 @@ public class RunFullQAAction extends AbstractAction {
         String defaultEnd = sdf.format(cal.getTime());
         cal.add(java.util.Calendar.HOUR_OF_DAY, -2);
         String defaultStart = sdf.format(cal.getTime());
+        String initialStart = !MapathonQAPlugin.lastStart.isEmpty() ? MapathonQAPlugin.lastStart : defaultStart;
+        String initialEnd   = !MapathonQAPlugin.lastEnd.isEmpty()   ? MapathonQAPlugin.lastEnd   : defaultEnd;
 
         gc.gridx=0; gc.gridy=4; gc.gridwidth=2;
         main.add(new JLabel("<html><b>Mapathon Time Window (UTC)</b><br><small>Format: YYYY-MM-DD HH:MM</small></html>"), gc);
         gc.gridy=5; gc.gridwidth=1;
         gc.gridx=0; main.add(new JLabel("Start (UTC):"), gc);
-        JTextField startField = new JTextField(defaultStart, 16);
+        JTextField startField = new JTextField(initialStart, 16);
         gc.gridx=1; main.add(startField, gc);
         gc.gridy=6;
         gc.gridx=0; main.add(new JLabel("End (UTC):"), gc);
-        JTextField endField = new JTextField(defaultEnd, 16);
+        JTextField endField = new JTextField(initialEnd, 16);
         gc.gridx=1; main.add(endField, gc);
 
         gc.gridx=0; gc.gridy=7; gc.gridwidth=2; gc.insets = new Insets(14, 4, 6, 4);

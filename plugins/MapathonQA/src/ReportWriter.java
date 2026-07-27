@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.openstreetmap.josm.spi.preferences.Config;
 
@@ -40,7 +41,9 @@ public class ReportWriter {
         int issuesPct = mapathonFeatures > 0 ? Math.round(100f * total / mapathonFeatures) : 0;
         int cleanPct  = mapathonFeatures > 0 ? Math.round(100f * clean / mapathonFeatures) : 100;
 
-        String generated = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
+        SimpleDateFormat generatedFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        generatedFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String generated = generatedFmt.format(new Date());
 
         try (BufferedWriter w = new BufferedWriter(new FileWriter(out))) {
             w.write(CSS());
@@ -124,7 +127,7 @@ public class ReportWriter {
             if (untagged > 0)    w.write("<li class=\'rec-item\'><strong>Always add tags to the nodes and ways you draw</strong><p>A node or way with no tags has no meaning in OpenStreetMap. If you drew a building outline, make sure to add building=yes before saving; if you placed a standalone node, tag it appropriately.</p></li>\n");
             w.write("</ul>\n</div>\n");
 
-            w.write("<div class=\'footer\'>With thanks from <a href=\'https://www.missingmaps.org\'>Missing Maps</a> &mdash; keep mapping!<br>Generated " + generated + "</div>\n");
+            w.write("<div class=\'footer\'>With thanks from <a href=\'https://www.missingmaps.org\'>Missing Maps</a> &mdash; keep mapping!<br>Generated " + generated + " (UTC)</div>\n");
             w.write("</div>\n</body>\n</html>\n");
         }
         return out;
