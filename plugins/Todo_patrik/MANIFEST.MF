@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Author: Gnonthgol;AndrewBuck;bagage;Patrik
+Plugin-Canloadatruntime: true
+Plugin-Class: org.openstreetmap.josm.plugins.todo.TodoPlugin
+Plugin-Description: Todo list dialog. Patrik fork: deleted features stay in list, Add+Zoom button, editable shortcuts, multi-select "Select" in the right-click menu.
+Plugin-Icon: images/dialogs/todo.png
+Plugin-Link: https://github.com/MissingMaps
+Plugin-Mainversion: 19044
+Plugin-Minimum-Java-Version: 17
+Plugin-Version: 2
