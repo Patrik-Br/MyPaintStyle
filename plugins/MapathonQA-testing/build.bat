@@ -1,6 +1,6 @@
 @echo off
-REM Builds MapathonQA.jar from src/, compiled against lib/josm-tested.jar
-REM Run from within the MapathonQA/ folder.
+REM Builds MapathonQA-testing.jar from src/, compiled against lib/josm-tested.jar
+REM Run from within the MapathonQA-testing/ folder.
 REM lib/josm-tested.jar is gitignored - download it from https://josm.openstreetmap.de/josm-tested.jar
 
 if not exist lib\josm-tested.jar (
@@ -18,6 +18,6 @@ if errorlevel 1 (
 )
 
 echo Packaging...
-jar cfm MapathonQA.jar MANIFEST.MF -C build .
+jar cfm MapathonQA-testing.jar MANIFEST.MF -C build .
 
-echo Done. Copy MapathonQA.jar to %%APPDATA%%\JOSM\plugins\ and restart JOSM.
+echo Done. Copy MapathonQA-testing.jar to %%APPDATA%%\JOSM\plugins\ and restart JOSM.

@@ -21,8 +21,11 @@ public class MapathonQAPlugin extends Plugin {
         super(info);
 
         MainMenu menu = MainApplication.getMenu();
+        // Menu text (not the package/class names) is deliberately marked "(Testing)" so this
+        // development copy is visually distinguishable from the released MapathonQA plugin if
+        // both happen to be installed at once - see README for the released version's repo.
         JMenu menuRoot = menu.addMenu(
-            I18n.tr("MapathonQA"), I18n.tr("MapathonQA"), 0,
+            I18n.tr("MapathonQA (Testing)"), I18n.tr("MapathonQA (Testing)"), 0,
             menu.getDefaultMenuPos(), HelpUtil.ht("Plugin/MapathonQA"));
 
         menuRoot.add(new JMenuItem(new RunFullQAAction()));

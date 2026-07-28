@@ -1,6 +1,12 @@
-# MapathonQA – JOSM Plugin
+# MapathonQA (Testing) – JOSM Plugin
 
 Post-mapathon data quality checker for Missing Maps.
+
+> **This is the testing/development copy**, built and iterated on in this personal monorepo. The
+> current public release lives at
+> [github.com/MissingMaps/MapathonQA-JOSM-plugin](https://github.com/MissingMaps/MapathonQA-JOSM-plugin).
+> Its menu is labelled "MapathonQA (Testing)" so it's distinguishable in JOSM's menu bar if you ever
+> have both installed at once.
 
 ## License
 

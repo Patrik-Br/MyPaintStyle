@@ -1,5 +1,5 @@
-MapathonQA/lib/josm-tested.jar
-MapathonQA/build/
+MapathonQA-testing/lib/josm-tested.jar
+MapathonQA-testing/build/
 BetterWorkspace/lib/josm-tested.jar
 BetterWorkspace/build/
 Todo_patrik/lib/josm-tested.jar

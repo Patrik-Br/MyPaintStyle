@@ -1,6 +1,6 @@
 #!/bin/bash
-# Builds MapathonQA.jar from src/, compiled against lib/josm-tested.jar
-# Run from within the MapathonQA/ folder.
+# Builds MapathonQA-testing.jar from src/, compiled against lib/josm-tested.jar
+# Run from within the MapathonQA-testing/ folder.
 # lib/josm-tested.jar is gitignored - download it from https://josm.openstreetmap.de/josm-tested.jar
 set -e
 
@@ -15,6 +15,6 @@ echo "Compiling..."
 javac --release 17 -cp lib/josm-tested.jar -d build src/*.java
 
 echo "Packaging..."
-jar cfm MapathonQA.jar MANIFEST.MF -C build .
+jar cfm MapathonQA-testing.jar MANIFEST.MF -C build .
 
-echo "Done. Copy MapathonQA.jar to ~/.local/share/JOSM/plugins/ and restart JOSM."
+echo "Done. Copy MapathonQA-testing.jar to ~/.local/share/JOSM/plugins/ and restart JOSM."
