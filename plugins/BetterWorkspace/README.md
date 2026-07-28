@@ -10,6 +10,8 @@ it to your toolbar via JOSM's own Preferences → Shortcuts / toolbar customizat
 - Toggle the visibility of the currently active layer.
 - Multi-validation prep — select all ways in the layer below the active one and add them to the
   todo plugin's list, for paging through task borders during a second/third mapping pass.
+- Open/close a secondary, view-only map window that always tracks the main view's position and
+  zoom, with its own independent set of which layers are shown.
 - Rotate the whole map view (data + imagery) clockwise/counter-clockwise, or reset it.
 
 **Note on "More tools":** that top-level menu isn't part of JOSM core's own default UI — core
@@ -94,6 +96,41 @@ documented API. If a future JOSM version renames/removes `userTable`, `popupMenu
 the Authors panel just goes back to only offering "Copy". If that happens, the fix is to re-run
 `javap -p` against the new `josm-tested.jar` on `UserListDialog` and `UserListDialog$UserTableModel`
 to find the new names.
+
+## Secondary Map View
+
+`SecondaryMapViewFrame.java` is a second, view-only map window with its own checkbox list of
+layers, opened/closed via **Secondary Map View** (`SecondaryMapViewAction.java`). Two design points
+worth knowing:
+
+- **No manual position/zoom sync code exists, by design.** It paints layers via the main
+  `MapView`'s own public `paintLayer(Layer, Graphics2D)` method, which always uses that MapView's
+  *current* position/scale/projection — so as long as the secondary window's canvas is the same
+  pixel size as the main map view (kept matched automatically via a resize listener + `pack()`),
+  it's pixel-perfect in sync with the main view for free, on every repaint. This only works for a
+  same-size window; a genuinely independently-sized/positioned second view would additionally need
+  a private-field reflection read of `MapView`'s `registeredLayers` map plus a hand-built
+  `MapViewState` for the target size — not implemented here.
+- **Layer visibility is independent per window.** `paintLayer()` doesn't check `Layer.isVisible()`
+  itself — the caller decides which layers to paint. So the checklist here tracks its own
+  `Set<Layer>`, seeded from each layer's visibility at the time it's added to the list, but never
+  written back to `Layer.isVisible()` afterwards — checking a box only affects this window.
+
+Repaints are triggered by `NavigatableComponent.addZoomChangeListener` (pan/zoom) and
+`MapView.addRepaintListener` (everything else — edits, tile loads, etc.), both public JOSM hooks.
+The layer checklist stays in sync with `LayerManager.addAndFireLayerChangeListener`. Paint order
+matches JOSM's own (`LayerManager.getLayers()` is topmost-first, so the loop here runs it in
+reverse) — confirmed by decompiling `MainLayerManager.getVisibleLayersInZOrder()` rather than
+guessing.
+
+**Align to Main View** button: since this window has its own sidebar (of a different width than the
+main window's toolbar/panels), lining up the two *windows'* edges doesn't line up the two *canvases*
+— the actual map content ends up offset even though both show the identical position/zoom. This
+button fixes that in one click: it re-syncs the canvas size (in case this window itself got resized,
+which the automatic main-view-resize sync doesn't catch), then computes screen coordinates via
+`getLocationOnScreen()` so this window's canvas ends up pixel-adjacent to the main view's canvas —
+snapping left or right based on whichever side this window is currently closer to, so it matches
+whatever rough arrangement you already dragged it into.
 
 ## Multi-validation prep and the todo-plugin bridge
 

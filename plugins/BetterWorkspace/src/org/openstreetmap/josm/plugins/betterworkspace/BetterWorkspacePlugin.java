@@ -66,6 +66,7 @@ extends Plugin {
         bwMenu.add(new ToggleActiveLayerAction());
         bwMenu.add(new MultiValidationPrepAction());
         bwMenu.addSeparator();
+        bwMenu.add(new SecondaryMapViewAction());
         bwMenu.add(rotateCw);
         bwMenu.add(rotateCcw);
         bwMenu.add(reset);
@@ -92,6 +93,8 @@ extends Plugin {
         if (mapFrame2 != null) {
             this.applySavedOrderWhenReady(mapFrame2, 20);
             AuthorSelectHook.installWhenReady(mapFrame2, 20);
+        } else {
+            SecondaryMapViewAction.closeIfOpen();
         }
     }
 
