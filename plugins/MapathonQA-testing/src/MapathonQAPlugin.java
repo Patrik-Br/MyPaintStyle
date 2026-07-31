@@ -17,6 +17,12 @@ public class MapathonQAPlugin extends Plugin {
     public static String lastEnd    = "";
     public static String lastMapathonName = "";
 
+    // Set by "Specific user(s)" mode in Run Full QA Check; 0/empty when not applicable (e.g. after
+    // a time-window run, which clears these back out - see RunFullQAAction).
+    public static int lastTargetUid = 0;
+    public static String lastTargetUsername = "";
+    public static boolean lastMapperMode = true;
+
     public MapathonQAPlugin(PluginInformation info) {
         super(info);
 

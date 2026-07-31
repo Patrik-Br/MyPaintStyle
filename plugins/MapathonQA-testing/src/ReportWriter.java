@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -41,27 +42,41 @@ public class ReportWriter {
         int issuesPct = mapathonFeatures > 0 ? Math.round(100f * total / mapathonFeatures) : 0;
         int cleanPct  = mapathonFeatures > 0 ? Math.round(100f * clean / mapathonFeatures) : 100;
 
+        boolean userMode = r.targetUid > 0;
+        int byUserTotal = userMode ? r.countForTargetUser(r.allFlaggedForUserTally()) : 0;
+        String osmProfileUrl = userMode
+            ? "https://www.openstreetmap.org/user/" + URLEncoder.encode(r.targetUsername, "UTF-8").replace("+", "%20")
+            : null;
+
         SimpleDateFormat generatedFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         generatedFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
         String generated = generatedFmt.format(new Date());
 
         try (BufferedWriter w = new BufferedWriter(new FileWriter(out))) {
-            w.write(CSS());
+            w.write(CSS(r));
 
             // ── HEADER ──────────────────────────────────────────────
             w.write("<div class=\'header\'>");
             w.write("<img src=\'" + LOGO_URI + "\' alt=\'Missing Maps\'>");
             w.write("<div class=\'header-divider\'></div>");
             w.write("<div class=\'header-text\'>");
-            w.write("<h1>Thank you for organising a mapathon! 🗺️</h1>");
-            w.write("<p>Here's some friendly feedback on how it went and what to watch for next time</p>");
+            if (userMode) {
+                w.write("<h1>Quality report for " + esc(r.targetUsername) + "</h1>");
+                w.write("<p>A look at outstanding issues in this " + (r.mapperMode ? "mapper's" : "validator's") + " tasks</p>");
+            } else {
+                w.write("<h1>Thank you for organising a mapathon! 🗺️</h1>");
+                w.write("<p>Here's some friendly feedback on how it went and what to watch for next time</p>");
+            }
             w.write("</div></div>\n");
 
             w.write("<div class=\'page\'>\n");
 
             // ── META ────────────────────────────────────────────────
             w.write("<div class=\'meta-card\'>\n");
-            if (r.mapathonName != null && !r.mapathonName.trim().isEmpty()) {
+            if (userMode) {
+                w.write("<div class=\'meta-item\'><div class=\'label\'>" + (r.mapperMode ? "Mapper" : "Validator") + "</div>");
+                w.write("<div class=\'value\'><a href=\'" + osmProfileUrl + "\' target=\'_blank\'>" + esc(r.targetUsername) + "</a></div></div>\n");
+            } else if (r.mapathonName != null && !r.mapathonName.trim().isEmpty()) {
                 w.write("<div class=\'meta-item\'><div class=\'label\'>Mapathon</div>");
                 w.write("<div class=\'value\'>" + esc(r.mapathonName.trim()) + "</div></div>\n");
             }
@@ -83,7 +98,9 @@ public class ReportWriter {
             w.write("<div class=\'summary-label\'>" + clean + " object" + (clean == 1 ? "" : "s") + " came out clean &mdash; great mapping!</div></div>\n");
             w.write("<div class=\'summary-card issues\'><div class=\'summary-num\'>" + issuesPct + "%</div><div>");
             w.write("<div class=\'summary-label\'>" + total + " object" + (total == 1 ? "" : "s") + " have a little room to grow</div>");
-            if (total > 0) {
+            if (userMode) {
+                w.write("<div class=\'summary-sub\'>" + byUserTotal + " by " + esc(r.targetUsername) + "</div>");
+            } else if (total > 0) {
                 w.write("<div class=\'summary-sub\'>from " + r.issueMappers + " mapper" + (r.issueMappers == 1 ? "" : "s") + "</div>");
             }
             w.write("</div></div>\n");
@@ -92,27 +109,28 @@ public class ReportWriter {
             // ── ISSUES TABLE ─────────────────────────────────────────
             w.write("<div class=\'card\'>\n<h2>A few things worth a second look</h2>\n");
             w.write("<p class=\'lede\'>Nothing alarming here &mdash; just small tweaks that&#39;ll make the map even better.</p>\n");
-            w.write("<div class=\'table-wrap\'>\n<table><thead><tr><th>Check</th><th>Issues</th><th>Notes</th></tr></thead><tbody>\n");
-            row(w, "Buildings tagging", nonYes,
+            String byUserHeader = userMode ? "<th>By " + esc(r.targetUsername) + "</th>" : "";
+            w.write("<div class=\'table-wrap\'>\n<table><thead><tr><th>Check</th><th>Issues</th>" + byUserHeader + "<th>Notes</th></tr></thead><tbody>\n");
+            row(w, "Buildings tagging", nonYes, r.countForTargetUser(r.nonYesBuildingTags), userMode,
                 "Buildings tagged differently than building=yes.");
             String overlapNote = "Buildings that geometrically overlap or are contained within another building (each count = one pair).";
             int duplicates = r.overlappingBuildings.duplicateBuildingCount;
             if (duplicates > 0) overlapNote += " " + duplicates + " building(s) were duplicated.";
-            row(w, "Overlapping buildings", overlap, overlapNote);
-            row(w, "Building outlines that cross a highway", onRoads,
+            row(w, "Overlapping buildings", overlap, r.countForTargetUser(r.overlappingBuildings.allInvolvedBuildings), userMode, overlapNote);
+            row(w, "Building outlines that cross a highway", onRoads, r.countForTargetUser(r.buildingsOnHighways), userMode,
                 "Building drawn through an existing highway.");
-            row(w, "Non-orthogonal buildings", nonOrtho,
+            row(w, "Non-orthogonal buildings", nonOrtho, r.countForTargetUser(r.nonOrthogonalBuildings), userMode,
                 "Rectangular buildings that most likely should be orthogonal with squared corners.");
-            row(w, "Buildings with layer tag", layerTag,
+            row(w, "Buildings with layer tag", layerTag, r.countForTargetUser(r.buildingsWithLayerTag), userMode,
                 "Buildings tagged with layer=* created as recommendation from iD editor when two objects are overlapping. The correct solution is for the objects to not overlap.");
-            row(w, "Buildings with shared nodes", sharedNodes,
+            row(w, "Buildings with shared nodes", sharedNodes, r.countForTargetUser(r.buildingsWithSharedNodes.affectedBuildings), userMode,
                 "Buildings sharing at least one node with another object (each count = one shared node, not a pair; " + sharedBldgs + " building(s) affected).");
-            row(w, "Untagged objects", untagged,
+            row(w, "Untagged objects", untagged, r.countForTargetUser(r.untaggedObjects), userMode,
                 "Nodes and ways with no tags, most likely mappers forgot to add a tag such as building=yes.");
             w.write("</tbody></table>\n</div>\n</div>\n");
 
             // ── RECOMMENDATIONS ──────────────────────────────────────
-            w.write("<div class=\'card\'>\n<h2>Handy tips for your next mapathon</h2>\n");
+            w.write("<div class=\'card\'>\n<h2>" + (userMode ? "Handy tips to keep improving" : "Handy tips for your next mapathon") + "</h2>\n");
             w.write("<p class=\'lede\'>Quick reminders to make next time even smoother &mdash; you&#39;ve already got the hang of it!</p>\n");
             w.write("<ul class=\'rec-list\'>\n");
             if (total == 0) {
@@ -133,11 +151,12 @@ public class ReportWriter {
         return out;
     }
 
-    private static String CSS() {
+    private static String CSS(QAResults r) {
+        String title = r.targetUid > 0 ? "Missing Maps Quality Report for " + esc(r.targetUsername) : "Missing Maps Mapathon Quality Report";
         return "<!DOCTYPE html>\n<html lang=\'en\'>\n<head>\n"
             + "<meta charset=\'UTF-8\'>\n"
             + "<meta name=\'viewport\' content=\'width=device-width, initial-scale=1\'>\n"
-            + "<title>Missing Maps Mapathon Quality Report</title>\n"
+            + "<title>" + title + "</title>\n"
             + "<link rel=\'preconnect\' href=\'https://fonts.googleapis.com\'>\n"
             + "<link href=\'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap\' rel=\'stylesheet\'>\n"
             + "<style>\n"
@@ -226,10 +245,15 @@ public class ReportWriter {
         return outDir;
     }
 
-    private static void row(BufferedWriter w, String check, int count, String notes) throws IOException {
+    private static void row(BufferedWriter w, String check, int count, int byUser, boolean showByUser, String notes) throws IOException {
         String cls = count == 0 ? "count-ok" : "count-warn";
         String countStr = count == 0 ? "&#10003; None" : String.valueOf(count);
-        w.write("<tr><td>" + esc(check) + "</td><td class=\'" + cls + "\'>" + countStr + "</td><td class=\'note\'>" + esc(notes) + "</td></tr>\n");
+        String byUserCell = "";
+        if (showByUser) {
+            String byCls = byUser == 0 ? "count-ok" : "count-warn";
+            byUserCell = "<td class=\'" + byCls + "\'>" + byUser + "</td>";
+        }
+        w.write("<tr><td>" + esc(check) + "</td><td class=\'" + cls + "\'>" + countStr + "</td>" + byUserCell + "<td class=\'note\'>" + esc(notes) + "</td></tr>\n");
     }
 
     private static String esc(String s) {

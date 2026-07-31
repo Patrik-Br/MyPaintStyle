@@ -13,14 +13,18 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -29,6 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -51,7 +56,7 @@ public class RunFullQAAction extends AbstractAction {
     public void actionPerformed(ActionEvent e) { showStep1Dialog(); }
 
     private void showStep1Dialog() {
-        JDialog dlg = new JDialog((java.awt.Frame) null, "MapathonQA \u2013 Step 1: Project & Time Window", true);
+        JDialog dlg = new JDialog((java.awt.Frame) null, "MapathonQA \u2013 Step 1: Report Setup", true);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         bindEscapeToClose(dlg);
 
@@ -60,22 +65,36 @@ public class RunFullQAAction extends AbstractAction {
         GridBagConstraints gc = new GridBagConstraints();
         gc.insets = new Insets(6, 4, 6, 4); gc.anchor = GridBagConstraints.WEST;
 
-        gc.gridx=0; gc.gridy=0; gc.gridwidth=2;
-        main.add(new JLabel("<html><b>Mapathon Name</b> <small>(optional)</small></html>"), gc);
-        gc.gridy=1; gc.gridwidth=1;
-        gc.gridx=0; main.add(new JLabel("Name:"), gc);
-        JTextField mapathonNameField = new JTextField(MapathonQAPlugin.lastMapathonName, 20);
-        mapathonNameField.setToolTipText("Shown on the report, e.g. \"Kathmandu University Mapathon\"");
-        gc.gridx=1; main.add(mapathonNameField, gc);
+        // The Name/Username and Time-Window/Role fields live in their own nested GridBagLayouts
+        // (see Card A/B below), each with its own independent column-0 width. Without a shared
+        // width, "Name:" (short) and "Project ID:" (in the outer layout) would each size their
+        // column to their own label and no longer line up. Pre-sizing every row label to the
+        // widest one keeps every text field's left edge aligned across the whole dialog.
+        int labelWidth = 0;
+        for (String t : new String[]{"Project ID:", "Name:", "Start (UTC):", "End (UTC):", "Username:", "Role:"})
+            labelWidth = Math.max(labelWidth, new JLabel(t).getPreferredSize().width);
+        final int rowLabelWidth = labelWidth;
+        java.util.function.Function<String, JLabel> rowLabel = text -> {
+            JLabel l = new JLabel(text);
+            l.setPreferredSize(new java.awt.Dimension(rowLabelWidth, l.getPreferredSize().height));
+            return l;
+        };
 
-        gc.gridx=0; gc.gridy=2; gc.gridwidth=2;
-        main.add(new JLabel("<html><b>HOT Tasking Manager Project ID</b></html>"), gc);
-        gc.gridy=3; gc.gridwidth=1;
-        gc.gridx=0; main.add(new JLabel("Project ID:"), gc);
-        JTextField projectIdField = new JTextField(
-            MapathonQAPlugin.lastProjectId > 0 ? String.valueOf(MapathonQAPlugin.lastProjectId) : "", 10);
-        projectIdField.setToolTipText("HOT Tasking Manager project number, e.g. 50430");
-        gc.gridx=1; main.add(projectIdField, gc);
+        // \u2500\u2500 Report scope toggle: time window (mapathon) vs specific user(s) (whole project) \u2500\u2500
+        // First thing in the dialog, since it decides which fields (and which Project ID
+        // requirement) apply below.
+        gc.gridx=0; gc.gridy=0; gc.gridwidth=2;
+        main.add(new JLabel("<html><b>Report Scope</b></html>"), gc);
+
+        JRadioButton rdoTimeWindow = new JRadioButton("Time window (mapathon)", true);
+        JRadioButton rdoUser = new JRadioButton("Specific user(s) (whole project)", false);
+        ButtonGroup scopeGroup = new ButtonGroup();
+        scopeGroup.add(rdoTimeWindow); scopeGroup.add(rdoUser);
+        JPanel scopePanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 12, 0));
+        scopePanel.add(rdoTimeWindow); scopePanel.add(rdoUser);
+        gc.gridy=1; gc.insets = new Insets(0, 4, 10, 4);
+        main.add(scopePanel, gc);
+        gc.insets = new Insets(6, 4, 6, 4);
 
         // Compute default time window: end = current UTC hour (floored), start = end - 2h
         java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
@@ -90,30 +109,149 @@ public class RunFullQAAction extends AbstractAction {
         String initialStart = !MapathonQAPlugin.lastStart.isEmpty() ? MapathonQAPlugin.lastStart : defaultStart;
         String initialEnd   = !MapathonQAPlugin.lastEnd.isEmpty()   ? MapathonQAPlugin.lastEnd   : defaultEnd;
 
-        gc.gridx=0; gc.gridy=4; gc.gridwidth=2;
-        main.add(new JLabel("<html><b>Mapathon Time Window (UTC)</b><br><small>Format: YYYY-MM-DD HH:MM</small></html>"), gc);
-        gc.gridy=5; gc.gridwidth=1;
-        gc.gridx=0; main.add(new JLabel("Start (UTC):"), gc);
-        JTextField startField = new JTextField(initialStart, 16);
-        gc.gridx=1; main.add(startField, gc);
-        gc.gridy=6;
-        gc.gridx=0; main.add(new JLabel("End (UTC):"), gc);
-        JTextField endField = new JTextField(initialEnd, 16);
-        gc.gridx=1; main.add(endField, gc);
+        // \u2500\u2500 Card A: Mapathon Name + Project ID (time window mode) / Username(s) (user mode) -
+        // same slot. Each card is its own GridBagLayout so panelA's overall size (driven by the
+        // larger of the two cards) never depends on which one is showing - that's what kept
+        // shifting things around when Project ID lived outside the cards.
+        java.awt.CardLayout cardsA = new java.awt.CardLayout();
+        JPanel panelA = new JPanel(cardsA);
 
-        gc.gridx=0; gc.gridy=7; gc.gridwidth=2; gc.insets = new Insets(14, 4, 6, 4);
+        JPanel nameCard = new JPanel(new GridBagLayout());
+        GridBagConstraints ngc = new GridBagConstraints();
+        ngc.insets = new Insets(6, 4, 6, 4); ngc.anchor = GridBagConstraints.WEST;
+        ngc.gridx=0; ngc.gridy=0; ngc.gridwidth=2;
+        nameCard.add(new JLabel("<html><b>Mapathon Name</b> <small>(optional)</small></html>"), ngc);
+        ngc.gridy=1; ngc.gridwidth=1;
+        ngc.gridx=0; nameCard.add(rowLabel.apply("Name:"), ngc);
+        JTextField mapathonNameField = new JTextField(MapathonQAPlugin.lastMapathonName, 20);
+        mapathonNameField.setToolTipText("Shown on the report, e.g. \"Kathmandu University Mapathon\"");
+        ngc.gridx=1; nameCard.add(mapathonNameField, ngc);
+        ngc.gridy=2; ngc.gridx=0; ngc.gridwidth=2; ngc.insets = new Insets(14, 4, 2, 4);
+        nameCard.add(new JLabel("<html><b>HOT Tasking Manager Project ID</b></html>"), ngc);
+        ngc.gridy=3; ngc.gridwidth=1; ngc.insets = new Insets(6, 4, 6, 4);
+        ngc.gridx=0; nameCard.add(rowLabel.apply("Project ID:"), ngc);
+        JTextField projectIdField = new JTextField(
+            MapathonQAPlugin.lastProjectId > 0 ? String.valueOf(MapathonQAPlugin.lastProjectId) : "", 10);
+        projectIdField.setToolTipText("HOT Tasking Manager project number, e.g. 50430");
+        ngc.gridx=1; nameCard.add(projectIdField, ngc);
+
+        JPanel userCard = new JPanel(new GridBagLayout());
+        GridBagConstraints ugc = new GridBagConstraints();
+        ugc.insets = new Insets(6, 4, 6, 4); ugc.anchor = GridBagConstraints.WEST;
+        ugc.gridx=0; ugc.gridy=0; ugc.gridwidth=2;
+        userCard.add(new JLabel("<html><b>Report by User</b><br><small>Covers the whole project - no time window needed</small></html>"), ugc);
+        ugc.gridy=1; ugc.gridwidth=1;
+        ugc.gridx=0; userCard.add(rowLabel.apply("Username:"), ugc);
+        JTextField userField = new JTextField(20);
+        userField.setToolTipText("OSM username, e.g. qeef");
+        ugc.gridx=1; userCard.add(userField, ugc);
+
+        panelA.add(nameCard, "name");
+        panelA.add(userCard, "user");
+
+        gc.gridx=0; gc.gridy=2; gc.gridwidth=2; gc.insets = new Insets(0, 0, 0, 0);
+        main.add(panelA, gc);
+        gc.insets = new Insets(6, 4, 6, 4);
+
+        // \u2500\u2500 Card B: Time Window fields + auto-load checkbox (time window mode) /
+        // Role + optional Project ID + auto-load checkbox (user mode) - same slot \u2500\u2500
+        java.awt.CardLayout cardsB = new java.awt.CardLayout();
+        JPanel panelB = new JPanel(cardsB);
+
+        JPanel timeCard = new JPanel(new GridBagLayout());
+        GridBagConstraints tgc = new GridBagConstraints();
+        tgc.insets = new Insets(6, 4, 6, 4); tgc.anchor = GridBagConstraints.WEST;
+        tgc.gridx=0; tgc.gridy=0; tgc.gridwidth=2;
+        JCheckBox chkLoadTime = new JCheckBox("Automatically load task grid into JOSM when closing", true);
+        timeCard.add(chkLoadTime, tgc);
+        tgc.gridy=1; tgc.insets = new Insets(14, 4, 2, 4);
+        timeCard.add(new JLabel("<html><b>Mapathon Time Window (UTC)</b><br><small>Format: YYYY-MM-DD HH:MM</small></html>"), tgc);
+        tgc.gridy=2; tgc.gridwidth=1; tgc.insets = new Insets(6, 4, 6, 4);
+        tgc.gridx=0; timeCard.add(rowLabel.apply("Start (UTC):"), tgc);
+        JTextField startField = new JTextField(initialStart, 16);
+        tgc.gridx=1; timeCard.add(startField, tgc);
+        tgc.gridy=3;
+        tgc.gridx=0; timeCard.add(rowLabel.apply("End (UTC):"), tgc);
+        JTextField endField = new JTextField(initialEnd, 16);
+        tgc.gridx=1; timeCard.add(endField, tgc);
+
+        JPanel roleCard = new JPanel(new GridBagLayout());
+        GridBagConstraints rgc = new GridBagConstraints();
+        rgc.insets = new Insets(6, 4, 6, 4); rgc.anchor = GridBagConstraints.WEST;
+        rgc.gridx=0; rgc.gridy=0; rgc.gridwidth=2;
+        roleCard.add(new JLabel("<html><b>Role</b><br><small>Check this user's mapped or validated tasks</small></html>"), rgc);
+        JRadioButton rdoMapper = new JRadioButton("Mapper", true);
+        JRadioButton rdoValidator = new JRadioButton("Validator", false);
+        ButtonGroup roleGroup = new ButtonGroup();
+        roleGroup.add(rdoMapper); roleGroup.add(rdoValidator);
+        JPanel rolePanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 12, 0));
+        rolePanel.add(rdoMapper); rolePanel.add(rdoValidator);
+        rgc.gridy=1; rgc.gridwidth=1;
+        rgc.gridx=0; roleCard.add(rowLabel.apply("Role:"), rgc);
+        rgc.gridx=1; roleCard.add(rolePanel, rgc);
+        rgc.gridy=2; rgc.gridx=0; rgc.gridwidth=2; rgc.insets = new Insets(14, 4, 2, 4);
+        roleCard.add(new JLabel("<html><b>HOT Tasking Manager Project ID</b> <small>(optional \u2014 only needed to auto-load the task grid)</small></html>"), rgc);
+        rgc.gridy=3; rgc.gridwidth=1; rgc.insets = new Insets(6, 4, 6, 4);
+        rgc.gridx=0; roleCard.add(rowLabel.apply("Project ID:"), rgc);
+        JTextField userProjectIdField = new JTextField(
+            MapathonQAPlugin.lastProjectId > 0 ? String.valueOf(MapathonQAPlugin.lastProjectId) : "", 10);
+        userProjectIdField.setToolTipText("HOT Tasking Manager project number, e.g. 50430 - optional, only needed to auto-load the task grid");
+        rgc.gridx=1; roleCard.add(userProjectIdField, rgc);
+        rgc.gridy=4; rgc.gridx=0; rgc.gridwidth=2; rgc.insets = new Insets(10, 4, 6, 4);
+        JCheckBox chkLoadUser = new JCheckBox("Automatically load task grid into JOSM when closing", true);
+        roleCard.add(chkLoadUser, rgc);
+
+        panelB.add(timeCard, "timewindow");
+        panelB.add(roleCard, "role");
+
+        gc.gridx=0; gc.gridy=3; gc.gridwidth=2; gc.insets = new Insets(0, 0, 0, 0);
+        main.add(panelB, gc);
+        gc.insets = new Insets(6, 4, 6, 4);
+
+        // Switch cards on toggle - CardLayout keeps panelA/panelB's size fixed to the larger
+        // card regardless of which is showing, so nothing else in the dialog shifts around.
+        java.awt.event.ActionListener scopeListener = ev -> {
+            if (rdoUser.isSelected()) { cardsA.show(panelA, "user"); cardsB.show(panelB, "role"); }
+            else { cardsA.show(panelA, "name"); cardsB.show(panelB, "timewindow"); }
+        };
+        rdoTimeWindow.addActionListener(scopeListener);
+        rdoUser.addActionListener(scopeListener);
+
+        gc.gridx=0; gc.gridy=4; gc.gridwidth=2; gc.insets = new Insets(14, 4, 6, 4);
         JCheckBox chkHistory = new JCheckBox("Include this report in MapathonQA_history.csv",
             Config.getPref().getBoolean(HistoryLogger.PREF_INCLUDE_HISTORY, false));
         chkHistory.setToolTipText("Appends one row to a persistent history CSV for tracking quality trends across mapathons over time");
         main.add(chkHistory, gc);
 
         JPanel btns = new JPanel();
-        JButton btnFind = new JButton("Find Mapathon Tasks \u2192");
+        JButton btnFind = new JButton("Find Tasks \u2192");
         JButton btnX    = new JButton("Cancel");
         btns.add(btnFind); btns.add(btnX);
 
         btnX.addActionListener(ev -> dlg.dispose());
         btnFind.addActionListener(ev -> {
+            if (rdoUser.isSelected()) {
+                String username = userField.getText().trim();
+                if (username.isEmpty()) {
+                    JOptionPane.showMessageDialog(dlg, "Please enter a username.", "MapathonQA", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                // Project ID is optional in this mode - only needed to auto-load the task grid.
+                int uPid = parseId(userProjectIdField.getText());
+                if (uPid > 0) MapathonQAPlugin.lastProjectId = uPid;
+                // No mapathon name in this mode - use the searched username instead, so the
+                // history CSV's "Name" column still identifies what the report covers.
+                MapathonQAPlugin.lastMapathonName = username;
+                // Whole-project mode has no time window - clear any leftover from a previous
+                // time-window run so "Run QA on Current Layer" doesn't wrongly filter by it.
+                MapathonQAPlugin.lastStart = "";
+                MapathonQAPlugin.lastEnd   = "";
+                Config.getPref().putBoolean(HistoryLogger.PREF_INCLUDE_HISTORY, chkHistory.isSelected());
+                dlg.dispose();
+                resolveUserAndContinue(uPid, username, rdoMapper.isSelected(), chkLoadUser.isSelected());
+                return;
+            }
+
             int pid = parseId(projectIdField.getText());
             if (pid < 1) { JOptionPane.showMessageDialog(dlg, "Please enter a valid project ID.", "MapathonQA", JOptionPane.ERROR_MESSAGE); return; }
             String startVal = startField.getText().trim();
@@ -122,9 +260,12 @@ public class RunFullQAAction extends AbstractAction {
             MapathonQAPlugin.lastStart        = startVal;
             MapathonQAPlugin.lastEnd          = endVal;
             MapathonQAPlugin.lastMapathonName = mapathonNameField.getText().trim();
+            // Time-window mode has no per-user tallying - clear any leftover target user from a
+            // previous user-mode run so it doesn't leak into this report.
+            MapathonQAPlugin.lastTargetUid = 0;
             Config.getPref().putBoolean(HistoryLogger.PREF_INCLUDE_HISTORY, chkHistory.isSelected());
             dlg.dispose();
-            fetchTaskIds(pid, startVal, endVal);
+            fetchTaskIds(pid, startVal, endVal, chkLoadTime.isSelected());
         });
 
         dlg.setLayout(new BorderLayout());
@@ -136,7 +277,7 @@ public class RunFullQAAction extends AbstractAction {
         dlg.setVisible(true);
     }
 
-    private void fetchTaskIds(int projectId, String start, String end) {
+    private void fetchTaskIds(int projectId, String start, String end, boolean autoLoad) {
         JDialog prog = progressDialog("Connecting to HOT Tasking Manager...");
         JLabel statusLbl = getStatusLabel(prog);
         prog.setVisible(true);
@@ -153,14 +294,77 @@ public class RunFullQAAction extends AbstractAction {
             }
             @Override protected void done() {
                 prog.dispose();
-                try { showStep2Dialog(projectId, start, end, get()); }
+                try { showStep2Dialog(projectId, start, end, get(), autoLoad); }
                 catch (Exception ex) { JOptionPane.showMessageDialog(null, "Failed to fetch task list:\n"+ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE); }
             }
         };
         worker.execute();
     }
 
-    private void showStep2Dialog(int projectId, String start, String end, List<Integer> taskIds) {
+    /**
+     * Resolves the username to its numeric OSM user ID, then hands off to a search query on
+     * mappedBy/validatedBy - those are tags already present on the task grid once it's loaded,
+     * so JOSM's own search does the actual matching, same as the taskId search built for
+     * time-window mode.
+     */
+    private void resolveUserAndContinue(int projectId, String username, boolean mapperMode, boolean autoLoad) {
+        JDialog prog = progressDialog("Looking up OSM user ID...");
+        JLabel statusLbl = getStatusLabel(prog);
+        prog.setVisible(true);
+
+        SwingWorker<Integer, String> worker = new SwingWorker<Integer, String>() {
+            @Override protected Integer doInBackground() {
+                publish("Looking up \"" + username + "\"...");
+                try { return resolveOsmUserId(username); } catch (Exception ex) { return -1; }
+            }
+            @Override protected void process(List<String> chunks) {
+                if (!chunks.isEmpty()) statusLbl.setText(chunks.get(chunks.size() - 1));
+            }
+            @Override protected void done() {
+                prog.dispose();
+                try {
+                    int uid = get();
+                    if (uid <= 0) {
+                        JOptionPane.showMessageDialog(null,
+                            "Could not resolve \"" + username + "\" to an OSM user ID (no changesets found).",
+                            "MapathonQA", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    showUserSearchDialog(projectId, uid, username, mapperMode, autoLoad);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(null, "User lookup failed:\n" + ex.getMessage(), "MapathonQA", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    /**
+     * Resolves an OSM username to its numeric user ID via a public, unauthenticated changeset
+     * query - OSM's API has no direct username-to-ID lookup, but every changeset response
+     * includes the author's uid, so querying for just one changeset by that display name works.
+     * Returns -1 if the username has never made a changeset (or doesn't exist).
+     */
+    private int resolveOsmUserId(String username) throws Exception {
+        String encoded = URLEncoder.encode(username, "UTF-8");
+        String urlStr = "https://api.openstreetmap.org/api/0.6/changesets.json?display_name=" + encoded + "&limit=1";
+        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+        conn.setRequestProperty("Accept", "application/json");
+        conn.setRequestProperty("User-Agent", "MapathonQA-JOSMPlugin/1.0");
+        conn.setConnectTimeout(15000); conn.setReadTimeout(30000);
+        int code = conn.getResponseCode();
+        if (code != 200) throw new Exception("OSM API returned HTTP " + code + " while looking up \"" + username + "\"");
+
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            String line; while ((line = br.readLine()) != null) sb.append(line);
+        }
+        String uidStr = extractJsonNumber(sb.toString(), "uid");
+        if (uidStr == null) return -1;
+        try { return Integer.parseInt(uidStr); } catch (NumberFormatException ex) { return -1; }
+    }
+
+    private void showStep2Dialog(int projectId, String start, String end, List<Integer> taskIds, boolean autoLoad) {
         JDialog dlg = new JDialog((java.awt.Frame) null, "MapathonQA \u2013 Step 2: Load & Select Tasks", true);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.setSize(840, 520);
@@ -191,7 +395,7 @@ public class RunFullQAAction extends AbstractAction {
         gc.gridy=2; gc.gridwidth=2; gc.fill=GridBagConstraints.HORIZONTAL;
         String steps = taskIds.isEmpty() ? "" :
             "<html><body style='line-height:140%'><b>Next steps:</b><ol style='margin-left:16px'>"
-            + "<li style='margin-bottom:8px'>If you left the checkbox below ticked, the task grid will load automatically when you close this dialog.</li>"
+            + "<li style='margin-bottom:8px'>If you left \"Automatically load task grid\" ticked on the previous screen, it will load automatically when you close this dialog.</li>"
             + "<li style='margin-bottom:8px'>Use <b>Edit \u2192 Search (Ctrl+F)</b> and paste the search query you copied above to select the mapathon task squares</li>"
             + "<li style='margin-bottom:8px'>Download OSM data for the selected tasks using the <b>Download Along Way</b> tool</li>"
             + "<li style='margin-bottom:8px'>Click <b>Run QA on Current Layer</b> from the MapathonQA menu</li>"
@@ -201,10 +405,6 @@ public class RunFullQAAction extends AbstractAction {
             + "<p style='margin:2px 0'><b>Included task statuses:</b> MAPPED, VALIDATED, INVALIDATED, BADIMAGERY, READY \u2014 all statuses are included, the time window is the only filter.</p>"
             + "</body></html>";
         main.add(new JLabel(steps), gc);
-
-        JCheckBox chkLoad = new JCheckBox("Automatically load task grid into JOSM when closing", true);
-        gc.gridy=3;
-        if (!taskIds.isEmpty()) main.add(chkLoad, gc);
 
         JPanel btns = new JPanel();
         JButton btnBack  = new JButton("\u2190 Back");
@@ -218,7 +418,94 @@ public class RunFullQAAction extends AbstractAction {
         btnX.addActionListener(ev -> dlg.dispose());
         btnClose.addActionListener(ev -> {
             dlg.dispose();
-            if (chkLoad.isSelected()) openTaskGridInJosm(taskGridUrl);
+            if (autoLoad) openTaskGridInJosm(taskGridUrl);
+        });
+
+        dlg.setLayout(new BorderLayout());
+        JScrollPane scroll = new JScrollPane(main); scroll.setBorder(null);
+        dlg.add(scroll, BorderLayout.CENTER);
+        dlg.add(btns, BorderLayout.SOUTH);
+        dlg.setVisible(true);
+    }
+
+    /**
+     * User-mode equivalent of Step 2: instead of a task-ID list we already discovered, this
+     * hands off a mappedBy/validatedBy search query - those fields are tags already present on
+     * the task grid once loaded, so JOSM's own search does the actual matching. There's no
+     * "count found" to show up front here; the match count only becomes known once the user
+     * runs the search in JOSM against the loaded grid.
+     */
+    private void showUserSearchDialog(int projectId, int uid, String username, boolean mapperMode, boolean autoLoad) {
+        // Stash the target user so "Run QA on Current Layer" (triggered later, separately, from
+        // the menu) knows to tally issues by this author. Cleared back to 0 when time-window
+        // mode's "Find Tasks" runs, so a stale target doesn't leak into an unrelated report.
+        MapathonQAPlugin.lastTargetUid = uid;
+        MapathonQAPlugin.lastTargetUsername = username;
+        MapathonQAPlugin.lastMapperMode = mapperMode;
+
+        JDialog dlg = new JDialog((java.awt.Frame) null, "MapathonQA \u2013 Step 2: Load & Select Tasks", true);
+        dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dlg.setSize(840, 480);
+        dlg.setLocationRelativeTo(null);
+        bindEscapeToClose(dlg);
+
+        boolean hasProject = projectId > 0;
+        String field = mapperMode ? "mappedBy" : "validatedBy";
+        String roleWord = mapperMode ? "mapped" : "validated";
+        String searchQuery = field + "=" + uid + (mapperMode ? " AND -validatedBy=*" : "");
+        // Mapper mode excludes tasks already validated by anyone - a task only gets a validatedBy
+        // tag once it's been through validation, so this leaves just this mapper's outstanding work.
+        String taskGridUrl = hasProject
+            ? "https://tasking-manager-production-api.hotosm.org/api/v2/projects/"+projectId+"/tasks/?as_file=true&format=geojson"
+            : null;
+
+        JPanel main = new JPanel(new GridBagLayout());
+        main.setBorder(BorderFactory.createEmptyBorder(14, 18, 8, 18));
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.insets = new Insets(5, 4, 5, 4); gc.anchor = GridBagConstraints.WEST;
+        gc.fill = GridBagConstraints.HORIZONTAL; gc.weightx = 1.0;
+
+        gc.gridx=0; gc.gridy=0; gc.gridwidth=2;
+        String header = hasProject
+            ? "<html><b style='color:#2e7d32'>Search query ready</b> for Project #"+projectId+" ("+(mapperMode?"Mapper":"Validator")+" mode)</html>"
+            : "<html><b style='color:#2e7d32'>Search query ready</b> ("+(mapperMode?"Mapper":"Validator")+" mode, no project ID given)</html>";
+        main.add(new JLabel(header), gc);
+
+        gc.gridy=1; gc.fill=GridBagConstraints.NONE; gc.weighty=0;
+        JButton btnCopyQuery = new JButton("\uD83D\uDCCB Copy Search Query to Clipboard");
+        btnCopyQuery.addActionListener(ev -> { Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(searchQuery), null); btnCopyQuery.setText("\u2713 Copied!"); });
+        main.add(btnCopyQuery, gc);
+
+        gc.gridy=2; gc.gridwidth=2; gc.fill=GridBagConstraints.HORIZONTAL;
+        String loadStep = hasProject
+            ? "<li style='margin-bottom:8px'>If you left \"Automatically load task grid\" ticked on the previous screen, it will load automatically when you close this dialog.</li>"
+            : "<li style='margin-bottom:8px'>No project ID was given, so load the task grid yourself: <b>File \u2192 Open Location (Ctrl+L)</b> with the project's task grid URL.</li>";
+        String steps =
+            "<html><body style='line-height:140%'><b>Next steps:</b><ol style='margin-left:16px'>"
+            + loadStep
+            + "<li style='margin-bottom:8px'>Use <b>Edit \u2192 Search (Ctrl+F)</b> and paste the search query you copied above to select this user's task squares</li>"
+            + "<li style='margin-bottom:8px'>Download OSM data for the selected tasks using the <b>Download Along Way</b> tool</li>"
+            + "<li style='margin-bottom:8px'>Click <b>Run QA on Current Layer</b> from the MapathonQA menu</li>"
+            + "</ol>"
+            + "<p style='margin:6px 0 2px'><b>\u2139 Note on task detection:</b></p>"
+            + "<p style='margin:2px 0'>Each task's <b>"+field+"</b> field only records the <b>most recent</b> user to have "+roleWord+" it. "
+            + "If someone else "+roleWord+" it again afterward, the earlier user's work on that task won't show up here.</p>"
+            + (mapperMode ? "<p style='margin:2px 0'>The query also excludes tasks that already have a <b>validatedBy</b> tag, "
+                + "so it only covers this mapper's currently outstanding (not yet validated) work.</p>" : "")
+            + "<p style='margin:2px 0'>The search above runs directly against the task grid layer once it's loaded \u2014 if it selects nothing, "
+            + "this user may not have "+roleWord+" any tasks in this project.</p>"
+            + "</body></html>";
+        main.add(new JLabel(steps), gc);
+
+        JPanel btns = new JPanel();
+        JButton btnBack  = new JButton("\u2190 Back");
+        JButton btnClose = new JButton("Close & Continue \u2192");
+        btns.add(btnBack); btns.add(btnClose);
+
+        btnBack.addActionListener(ev -> { dlg.dispose(); showStep1Dialog(); });
+        btnClose.addActionListener(ev -> {
+            dlg.dispose();
+            if (autoLoad && hasProject) openTaskGridInJosm(taskGridUrl);
         });
 
         dlg.setLayout(new BorderLayout());

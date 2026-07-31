@@ -11,14 +11,20 @@ public class CheckOverlappingBuildingsAction extends AbstractAction {
      * GeometryUtil.isExactDuplicate). size() reports the number of overlapping PAIRS found
      * (matching the report note "each count = one pair") - not the number of distinct flagged
      * buildings, since one building can be involved in more than one overlapping pair.
-     * flaggedBuildings is still the deduplicated set actually selected in the editor.
+     * flaggedBuildings is still the deduplicated set actually selected in the editor - only
+     * ONE side of each pair, prioritized by the time window (or, with no time window, whichever
+     * building happens to come first internally - NOT necessarily meaningful on its own).
+     * allInvolvedBuildings has BOTH sides of every pair, for uses that need to know whether a
+     * specific building/author was involved at all, regardless of which side got flagged.
      */
     public static class OverlapResult {
         public Set<OsmPrimitive> flaggedBuildings;
+        public Set<OsmPrimitive> allInvolvedBuildings;
         public int duplicateBuildingCount;
         public int pairCount;
-        public OverlapResult(Set<OsmPrimitive> flaggedBuildings, int duplicateBuildingCount, int pairCount) {
+        public OverlapResult(Set<OsmPrimitive> flaggedBuildings, Set<OsmPrimitive> allInvolvedBuildings, int duplicateBuildingCount, int pairCount) {
             this.flaggedBuildings = flaggedBuildings;
+            this.allInvolvedBuildings = allInvolvedBuildings;
             this.duplicateBuildingCount = duplicateBuildingCount;
             this.pairCount = pairCount;
         }
@@ -58,6 +64,7 @@ public class CheckOverlappingBuildingsAction extends AbstractAction {
         for (int i=0;i<buildings.size();i++) indexOf.put(buildings.get(i), i);
 
         Set<OsmPrimitive> f = new LinkedHashSet<>();
+        Set<OsmPrimitive> allInvolved = new LinkedHashSet<>();
         Set<OsmPrimitive> duplicates = new LinkedHashSet<>();
         int pairCount = 0;
 
@@ -81,12 +88,13 @@ public class CheckOverlappingBuildingsAction extends AbstractAction {
                     || classification == Geometry.PolygonIntersection.FIRST_INSIDE_SECOND
                     || classification == Geometry.PolygonIntersection.SECOND_INSIDE_FIRST;
                 if (dup || overlapping) {
+                    allInvolved.add(a); allInvolved.add(b);
                     OsmPrimitive flagged = null;
                     if (GeometryUtil.isMappedDuring(a,since,until)) flagged=a; else if (GeometryUtil.isMappedDuring(b,since,until)) flagged=b;
                     if (flagged!=null) { f.add(flagged); pairCount++; if (dup) duplicates.add(flagged); }
                 }
             }
         }
-        return new OverlapResult(f, duplicates.size(), pairCount);
+        return new OverlapResult(f, allInvolved, duplicates.size(), pairCount);
     }
 }

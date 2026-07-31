@@ -38,10 +38,14 @@ public class RunQAOnCurrentLayerAction extends AbstractAction {
         runQA(MapathonQAPlugin.lastProjectId,
               MapathonQAPlugin.lastStart,
               MapathonQAPlugin.lastEnd,
-              MapathonQAPlugin.lastMapathonName);
+              MapathonQAPlugin.lastMapathonName,
+              MapathonQAPlugin.lastTargetUid,
+              MapathonQAPlugin.lastTargetUsername,
+              MapathonQAPlugin.lastMapperMode);
     }
 
-    public static void runQA(int projectId, String start, String end, String mapathonName) {
+    public static void runQA(int projectId, String start, String end, String mapathonName,
+                              int targetUid, String targetUsername, boolean mapperMode) {
         DataSet ds = MainApplication.getLayerManager().getEditDataSet();
         if (ds == null) {
             JOptionPane.showMessageDialog(null,
@@ -83,6 +87,9 @@ public class RunQAOnCurrentLayerAction extends AbstractAction {
                 r.mapathonName  = mapathonName;
                 r.startTime  = start;
                 r.endTime    = end;
+                r.targetUid       = targetUid;
+                r.targetUsername  = targetUsername;
+                r.mapperMode      = mapperMode;
                 r.since      = since;
                 r.until      = until;
                 r.totalNodes     = ds.getNodes().size();
@@ -171,8 +178,9 @@ public class RunQAOnCurrentLayerAction extends AbstractAction {
                     }
 
                     int total = r.totalIssues();
-                    String nameInfo = (r.mapathonName != null && !r.mapathonName.trim().isEmpty())
-                        ? r.mapathonName.trim() + "\n" : "";
+                    String nameInfo = r.targetUid > 0
+                        ? "User: " + r.targetUsername + " (" + (r.mapperMode ? "Mapper" : "Validator") + ")\n"
+                        : (r.mapathonName != null && !r.mapathonName.trim().isEmpty() ? r.mapathonName.trim() + "\n" : "");
                     String projInfo = projectId > 0
                         ? "Project #" + projectId + "  |  " + start + " \u2192 " + end + " (UTC)\n\n"
                         : "";
@@ -194,8 +202,8 @@ public class RunQAOnCurrentLayerAction extends AbstractAction {
                         + "  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n"
                         + "  Total issues:    " + total
                         + " (created by " + r.issueMappers + " mapper" + (r.issueMappers == 1 ? "" : "s") + ")\n"
-                        + "  Quality score:   " + String.format("%.0f", r.qualityScore())
-                        + "% (" + r.qualityLabel() + ")\n\n"
+                        + (r.targetUid > 0 ? "  By " + r.targetUsername + ":    " + r.countForTargetUser(r.allFlaggedForUserTally()) + "\n" : "")
+                        + "\n"
                         + (total > 0 ? "Flagged objects are selected in the editor.\n" : "\u2713 No issues found!\n")
                         + (reportFile != null ? "\nReport saved to:\n  " + reportFile.getAbsolutePath() : "")
                         + (historyFile != null ? "\nHistory log updated:\n  " + historyFile.getAbsolutePath() : "");
