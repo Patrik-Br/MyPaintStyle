@@ -22,6 +22,7 @@ import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.progress.NullProgressMonitor;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.io.GeoJSONReader;
+import org.openstreetmap.josm.spi.preferences.Config;
 import org.openstreetmap.josm.tools.I18n;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
@@ -38,6 +39,7 @@ import org.openstreetmap.josm.tools.Shortcut;
 final class LoadTmTaskGridAction extends JosmAction {
 
     private static final String TM_API = "https://tasking-manager-production-api.hotosm.org/api/v2";
+    private static final String PREF_LAST_PROJECT_ID = "betterworkspace.tm.lastprojectid";
 
     LoadTmTaskGridAction() {
         super(I18n.tr("Load HOT TM Task Grid..."), "betterworkspace/tm-load-taskgrid",
@@ -49,9 +51,11 @@ final class LoadTmTaskGridAction extends JosmAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        String input = JOptionPane.showInputDialog(null,
+        String lastId = Config.getPref().get(PREF_LAST_PROJECT_ID, "");
+        String input = (String) JOptionPane.showInputDialog(null,
                 I18n.tr("HOT Tasking Manager project ID:"),
-                I18n.tr("BetterWorkspace – Load Task Grid"), JOptionPane.QUESTION_MESSAGE);
+                I18n.tr("BetterWorkspace – Load Task Grid"), JOptionPane.QUESTION_MESSAGE,
+                null, null, lastId);
         if (input == null) {
             return;
         }
@@ -63,6 +67,7 @@ final class LoadTmTaskGridAction extends JosmAction {
                     "BetterWorkspace", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        Config.getPref().put(PREF_LAST_PROJECT_ID, String.valueOf(projectId));
 
         final int id = projectId;
         final JDialog progress = progressDialog(I18n.tr("Loading task grid for project #{0}...", String.valueOf(id)));
