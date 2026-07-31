@@ -1,5 +1,6 @@
 package org.openstreetmap.josm.plugins.betterworkspace;
 
+import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
@@ -7,7 +8,12 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import javax.swing.BorderFactory;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.SwingWorker;
 
 import org.openstreetmap.josm.actions.JosmAction;
@@ -59,6 +65,7 @@ final class LoadTmTaskGridAction extends JosmAction {
         }
 
         final int id = projectId;
+        final JDialog progress = progressDialog(I18n.tr("Loading task grid for project #{0}...", String.valueOf(id)));
         SwingWorker<DataSet, Void> worker = new SwingWorker<DataSet, Void>() {
             private String errorMessage;
 
@@ -75,6 +82,7 @@ final class LoadTmTaskGridAction extends JosmAction {
 
             @Override
             protected void done() {
+                progress.dispose();
                 DataSet dataSet;
                 try {
                     dataSet = get();
@@ -84,15 +92,31 @@ final class LoadTmTaskGridAction extends JosmAction {
                 }
                 if (dataSet == null) {
                     JOptionPane.showMessageDialog(null,
-                            I18n.tr("Failed to load task grid for project #{0}:\n{1}", id, errorMessage),
+                            I18n.tr("Failed to load task grid for project #{0}:\n{1}", String.valueOf(id), errorMessage),
                             "BetterWorkspace", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 MainApplication.getLayerManager().addLayer(
-                        new OsmDataLayer(dataSet, I18n.tr("TM Task Grid #{0}", id), null));
+                        new OsmDataLayer(dataSet, I18n.tr("TM Task Grid #{0}", String.valueOf(id)), null));
             }
         };
+        progress.setVisible(true);
         worker.execute();
+    }
+
+    private static JDialog progressDialog(String message) {
+        JDialog dlg = new JDialog((java.awt.Frame) null, "BetterWorkspace – Please wait...", false);
+        dlg.setSize(380, 110);
+        dlg.setLocationRelativeTo(null);
+        dlg.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+        panel.add(new JLabel(message), BorderLayout.CENTER);
+        JProgressBar bar = new JProgressBar();
+        bar.setIndeterminate(true);
+        panel.add(bar, BorderLayout.SOUTH);
+        dlg.add(panel);
+        return dlg;
     }
 
     private static DataSet fetchTaskGrid(int projectId) throws IOException {
