@@ -10,6 +10,8 @@ it to your toolbar via JOSM's own Preferences → Shortcuts / toolbar customizat
 - Toggle the visibility of the currently active layer.
 - Multi-validation prep — select all ways in the layer below the active one and add them to the
   todo plugin's list, for paging through task borders during a second/third mapping pass.
+- Quick TMS — preview a TMS imagery layer for this session only, without touching your saved
+  imagery list (optionally pin it permanently instead).
 - Open/close a secondary, view-only map window that always tracks the main view's position and
   zoom, with its own independent set of which layers are shown.
 - Rotate the whole map view (data + imagery) clockwise/counter-clockwise, or reset it.
@@ -96,6 +98,35 @@ documented API. If a future JOSM version renames/removes `userTable`, `popupMenu
 the Authors panel just goes back to only offering "Copy". If that happens, the fix is to re-run
 `javap -p` against the new `josm-tested.jar` on `UserListDialog` and `UserListDialog$UserTableModel`
 to find the new names.
+
+## Quick TMS
+
+**Quick TMS...** (`QuickTmsAction.java`/`QuickTmsDialog.java`) previews a TMS layer without going
+through JOSM's own **Imagery → Add...**, which always writes the new entry into the persisted,
+`imagery.xml`-backed list (`ImageryLayerInfo.instance`) whether you wanted to keep it or not.
+
+- The dialog builds an `ImageryInfo`/`ImageryLayer` exactly the way JOSM's own imagery preferences
+  UI does, then adds the layer straight to `MainApplication.getLayerManager()` **without** ever
+  calling `ImageryLayerInfo.addLayer(...)` — so by default it behaves like any other layer: closing
+  it or quitting JOSM just drops it, nothing touches preferences. Checking **Pin to my imagery
+  list** before clicking Add Layer calls `ImageryLayerInfo.addLayer(info)` too (which both adds and
+  saves), so it shows up under the normal Imagery menu next time.
+- The URL field requires a zoom placeholder (`{zoom}` or `{z}`) plus both `{x}` and `{y}` — checked
+  live as you type, with the "Add Layer" button disabled until it's satisfied.
+- The last 10 name/URL pairs used are kept as an in-memory (not preferences-backed, cleared on
+  restart) history, offered as the URL field's dropdown; picking one also fills in its matching name
+  if the Name field is still empty.
+- Name is optional - leaving it blank uses the URL itself as the layer's name (and what gets stored
+  in history / pinned).
+- A generic TMS URL has no known coverage area, so JOSM's own right-click **Zoom to layer** on such
+  an imagery layer would otherwise zoom out to the whole world - not useful for a TMS that, in
+  practice, usually only covers a city or similarly small area. The dialog works around this by
+  capturing the current map view (`MapView.getRealBounds()`) as the new layer's bounds when **Add
+  Layer** is clicked, so a later **Zoom to layer** returns to roughly where you were looking instead.
+  Confirmed via bytecode inspection of `AbstractTileSourceLayer` that `ImageryInfo.getBounds()` is
+  referenced exactly once in that class, inside `visitBoundingBox(...)` (what "Zoom to layer"
+  calls) - it's never consulted by tile fetching/painting, so this only affects the zoom target and
+  can't hide or restrict any imagery.
 
 ## Secondary Map View
 
