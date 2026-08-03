@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Plugin-Class: org.openstreetmap.josm.plugins.betterworkspace.BetterWorkspacePlugin
-Plugin-Version: 1.4.0
-Plugin-Mainversion: 18000
-Plugin-Canloadatruntime: true
-Plugin-Icon: images/betterworkspace/betterworkspace.svg
-Author: Patrik_B
-Plugin-Description: BetterWorkspace tweaks for JOSM: rotate the whole map view (data + imagery) via toolbar buttons, arrange the docked side panels (Windows > Arrange side panels...), and add a "Select objects" right-click entry to the built-in Authors panel. Panel order is saved and restored on start. No default keyboard shortcuts.
